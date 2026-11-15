@@ -114,3 +114,44 @@ test('the gateway preserves 204 logout and turns unavailable upstream responses 
   const unavailable=await forwardExpress(new Request('https://nutri.test/api/v1/auth/csrf'));
   assert.equal(unavailable.status,502);assert.equal((await unavailable.json()).error.code,'UPSTREAM_UNAVAILABLE');
 });
+
+test('Cloudflare Access uses server credentials and never exposes or accepts browser credentials',async t=>{
+  const keys=['CF_ACCESS_CLIENT_ID','CF_ACCESS_CLIENT_SECRET'];
+  const previous=keys.map(key=>process.env[key]);
+  t.after(()=>keys.forEach((key,index)=>{if(previous[index]===undefined)delete process.env[key];else process.env[key]=previous[index]}));
+  process.env.CF_ACCESS_CLIENT_ID='service-test-id';
+  process.env.CF_ACCESS_CLIENT_SECRET='service-test-secret';
+  const {forwardExpress}=await moduleAt('../lib/server/express-gateway.ts');let forwarded;
+  t.mock.method(globalThis,'fetch',async(_url,options)=>{forwarded=options.headers;return Response.json({csrfToken:'test-token'})});
+  const response=await forwardExpress(new Request('https://nutri.test/api/v1/auth/csrf',{headers:{'CF-Access-Client-Id':'browser-id','CF-Access-Client-Secret':'browser-secret'}}));
+  assert.equal(response.status,200);
+  assert.equal(forwarded.get('CF-Access-Client-Id'),'service-test-id');
+  assert.equal(forwarded.get('CF-Access-Client-Secret'),'service-test-secret');
+  assert.equal(response.headers.get('CF-Access-Client-Secret'),null);
+  assert.doesNotMatch(await response.text(),/service-test-secret|browser-secret/);
+  delete process.env.CF_ACCESS_CLIENT_ID;delete process.env.CF_ACCESS_CLIENT_SECRET;
+  await forwardExpress(new Request('https://nutri.test/api/v1/auth/csrf',{headers:{'CF-Access-Client-Secret':'browser-secret'}}));
+  assert.equal(forwarded.get('CF-Access-Client-Secret'),null);
+});
+
+test('an incomplete Access configuration fails before contacting the API',async t=>{
+  const keys=['CF_ACCESS_CLIENT_ID','CF_ACCESS_CLIENT_SECRET'];
+  const previous=keys.map(key=>process.env[key]);
+  t.after(()=>keys.forEach((key,index)=>{if(previous[index]===undefined)delete process.env[key];else process.env[key]=previous[index]}));
+  const {forwardExpress}=await moduleAt('../lib/server/express-gateway.ts');let calls=0;
+  t.mock.method(globalThis,'fetch',async()=>{calls++;throw new Error('must not fetch')});
+  for(const configured of keys){
+    for(const key of keys)delete process.env[key];
+    process.env[configured]='test-value';
+    const response=await forwardExpress(new Request('https://nutri.test/api/v1/auth/csrf'));
+    assert.equal(response.status,503);assert.equal((await response.json()).error.code,'GATEWAY_MISCONFIGURED');
+  }
+  assert.equal(calls,0);
+});
+
+test('retired D1 endpoints return an explicit non-cacheable response',async()=>{
+  const {legacyApiDisabled}=await moduleAt('../lib/server/legacy-api.ts');
+  const response=legacyApiDisabled();
+  assert.equal(response.status,410);assert.equal(response.headers.get('Cache-Control'),'no-store');
+  assert.equal((await response.json()).error.code,'LEGACY_API_DISABLED');
+});

@@ -4,7 +4,10 @@ import {createRequire} from 'node:module';
 import {realpathSync,readdirSync} from 'node:fs';
 import path from 'node:path';
 
-const origin='https://nutribalance-mauricio.maauri.chatgpt.site';
+const origin=process.env.TEST_SITE_ORIGIN||'https://nutribalance-mauricio.maauri.chatgpt.site';
+const target=new URL(origin);
+assert.equal(target.origin,origin,'TEST_SITE_ORIGIN debe ser un origen exacto.');
+assert.ok(target.protocol==='https:'||(target.protocol==='http:'&&['localhost','127.0.0.1'].includes(target.hostname)),'Usá HTTPS o localhost para la prueba.');
 const input=await new Promise((resolve,reject)=>{
   let buffer='';const terminal=process.stdin.isTTY;
   function done(){process.stdin.removeListener('data',data);if(terminal)process.stdin.setRawMode(false);process.stdin.pause();try{resolve(JSON.parse(buffer.trim()))}catch{reject(new Error('Send credential JSON on stdin.'))}}

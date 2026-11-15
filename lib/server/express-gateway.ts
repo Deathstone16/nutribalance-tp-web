@@ -22,11 +22,19 @@ export async function forwardExpress(request:Request){
   if(!allowed)return error(404,'NOT_FOUND','No se encontró el recurso.');
   if(!allowed[1].includes(request.method))return error(405,'METHOD_NOT_ALLOWED','Esta acción no está disponible.');
   if(request.method!=='GET'&&request.headers.get('Origin')!==url.origin)return error(403,'ORIGIN_INVALID','Volvé a abrir el formulario desde NutriBalance.');
+  const accessId=process.env.CF_ACCESS_CLIENT_ID;
+  const accessSecret=process.env.CF_ACCESS_CLIENT_SECRET;
+  if(Boolean(accessId)!==Boolean(accessSecret))return error(503,'GATEWAY_MISCONFIGURED','La conexión con el consultorio requiere configuración.');
   // Browser origin is checked above; Express separately allowlists this server hop.
   const upstreamOrigin=process.env.EXPRESS_ALLOWED_ORIGIN
     ? new URL(process.env.EXPRESS_ALLOWED_ORIGIN).origin
     : url.origin;
   const headers=new Headers({Accept:'application/json',Origin:upstreamOrigin});
+  // These credentials belong to the server; never accept them from the browser.
+  if(accessId&&accessSecret){
+    headers.set('CF-Access-Client-Id',accessId);
+    headers.set('CF-Access-Client-Secret',accessSecret);
+  }
   const cookie=request.headers.get('Cookie')?.split(';').map(value=>value.trim()).find(value=>value.startsWith('nutri.sid='));
   if(cookie)headers.set('Cookie',cookie);
   const csrf=request.headers.get('X-CSRF-Token');

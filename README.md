@@ -1,32 +1,50 @@
-﻿# NutriBalance · TP Integrador de Desarrollo Web 2026
+# NutriBalance · Frontend en Vercel y API local
 
-Aplicación del escenario 2, NutriTurnos: página de Mauricio Pelozo, solicitud de turnos, acceso profesional, pacientes e historial de consultas.
+Rama de preparación: **`codex/vercel-local-api`**. Next.js 16 aloja la interfaz y el gateway HTTP. Express y PostgreSQL permanecen en tu PC, accesibles mediante Cloudflare Tunnel en `https://api.neadev.com`.
 
-Sitio: https://nutribalance-mauricio.maauri.chatgpt.site
+**[Guía para subir la rama, publicar y terminar la configuración](docs/despliegue-vercel.md).** Todavía falta crear/configurar el proyecto y ejecutar el despliegue real en tu cuenta de Vercel.
 
-**Usá únicamente datos ficticios.** Las credenciales de prueba se entregan por separado y no forman parte del código.
+Usar únicamente datos ficticios. Las credenciales profesionales se entregan por separado y se ingresan en el formulario; no se guardan en Git ni en el frontend.
 
-## Flujo principal
+## Conexión
 
-1. Abrí `/solicitar-turno`, elegí una fecha y un horario disponible de Argentina.
-2. Enviá nombre, teléfono y, opcionalmente, correo. La API genera un turno pendiente y su comprobante UUID; todavía no crea una ficha clínica.
-3. Ingresá en `/ingresar` con la cuenta profesional creada en Express.
-4. Buscá o creá la ficha del paciente y vinculala al confirmar la solicitud en Agenda.
-5. Desde un turno confirmado que ya comenzó, abrí **Registrar consulta**. Al guardar una consulta vinculada, Express debe marcar el turno como atendido en la misma transacción.
-6. También podés registrar una consulta independiente desde la ficha. Esa consulta no modifica ningún turno.
-7. Recargá el historial y cerrá la sesión al terminar.
+```text
+Navegador → Next.js /api/v1 en Vercel → Cloudflare Tunnel → Express/PostgreSQL en tu PC
+```
 
-Los turnos duran 30 minutos, de lunes a viernes entre 09:00 y 17:00, con un horizonte de 60 días. Cancelar libera el horario. Para reprogramar, cancelá y solicitá un nuevo turno.
+El gateway mantiene la sesión en el origen del frontend con cookie `nutri.sid`, HttpOnly, Secure, SameSite=Lax y Path=/api/v1. Reenvía únicamente rutas del contrato, la sesión y CSRF. Comprueba el origen del navegador en escrituras y utiliza un destino fijo. Las credenciales opcionales de Cloudflare Access se incorporan exclusivamente en el servidor.
 
-## Arquitectura
+## Desarrollo local
 
-- React, TypeScript y CSS propio: interfaz editorial en verde bosque y marfil; fuentes locales Manrope y Source Serif 4.
-- Vinext/Vite y Cloudflare Worker o servidor Node en Docker: páginas públicas y gateway HTTP.
-- Express en `https://api.neadev.com/api/v1`: sesiones, pacientes, disponibilidad, turnos y consultas. El contrato del equipo especifica PostgreSQL; este repositorio no contiene el servidor ni sus migraciones.
-- Gateway fijo `/api/v1/*`: reenvía únicamente las rutas del contrato y la cookie `nutri.sid`. Mantiene la sesión en el mismo origen del sitio para evitar depender de cookies de terceros. No acepta destinos arbitrarios ni reenvía la identidad de la plataforma.
-- Sesión administrada por Express, cookie HttpOnly/Secure y token CSRF en memoria. No se guardan contraseñas, sesiones ni historias clínicas en `localStorage`.
+Requisitos: Node.js 24 y pnpm 11.25.0, fijados en `.nvmrc` y `package.json`.
 
-Los endpoints D1 anteriores y las migraciones permanecen como respaldo. La interfaz principal ya no los utiliza. Los prototipos `/demo-profesional` y `/demo-paciente` siguen siendo demostraciones con datos locales, separadas del panel conectado.
+```powershell
+corepack pnpm install --frozen-lockfile
+Copy-Item .env.example .env.local
+corepack pnpm dev
+```
+
+Conservar `.env.local` si ya existe y editar solo los valores necesarios. Abrir `http://localhost:5173`. La API local y su túnel deben estar activos; la plantilla conserva el origen que esa API ya tiene configurado. El gateway comprueba por separado el origen real del navegador.
+
+```powershell
+corepack pnpm build
+corepack pnpm start
+```
+
+`build` genera `.next`; `start` ejecuta el frontend compilado en localhost:5173. Vercel administra su propio servidor.
+
+## Verificar
+
+```powershell
+corepack pnpm build
+corepack pnpm typecheck
+corepack pnpm test
+corepack pnpm check:public https://tu-proyecto.vercel.app
+```
+
+Reemplazar la URL por la publicación real. `check:public` realiza ocho controles sin crear pacientes, turnos o consultas: frontend, disponibilidad, cookie, rechazo anónimo, origen ajeno y rutas antiguas desactivadas. Un 200 de `/api/health` solo comprueba el frontend; las rutas `/api/v1` verifican la conexión con Express.
+
+La prueba optativa `tests/express-live-flow.mjs --production` permite elegir el frontend con `TEST_SITE_ORIGIN`. Recibe credenciales JSON por stdin, con entrada oculta en terminal. Su modo normal crea una ficha y consulta ficticias y cancela su turno; `--read-only` requiere el ID de una ficha ficticia con historial y no crea registros. Consultar la guía antes de ejecutarla. No poner credenciales en argumentos, archivos, Git ni capturas.
 
 ## Rutas
 
@@ -34,65 +52,15 @@ Los endpoints D1 anteriores y las migraciones permanecen como respaldo. La inter
 |---|---|
 | `/` | Presentación y preguntas frecuentes |
 | `/solicitar-turno` | Disponibilidad y solicitud pública |
-| `/ingresar` | Correo y contraseña de Express |
-| `/panel` | Resumen, pacientes, agenda, ficha e historial; Express autoriza cada operación privada |
-| `/api/v1/*` | Gateway limitado al contrato externo |
-| `/demo-profesional`, `/demo-paciente` | Prototipos visuales, sin acceso a datos de Express |
-| `/api/panel`, `/api/solicitudes` | Implementación D1 anterior, conservada como respaldo |
+| `/ingresar` | Cuenta profesional de Express |
+| `/panel` | Pacientes, agenda, ficha e historial |
+| `/api/v1/*` | Gateway hacia Express |
+| `/api/health` | Estado del frontend |
+| `/api/panel`, `/api/solicitudes` | Desactivadas: HTTP 410; no utilizan D1 |
+| `/demo-profesional`, `/demo-paciente` | Prototipos con datos locales de ejemplo |
 
-El sitio es público. Eso no concede acceso a pacientes ni consultas: Express exige una sesión profesional en cada endpoint privado. El HTML inicial del panel contiene una pantalla de carga, sin datos clínicos.
+## Código y documentación conservados
 
-## Ejecutar en desarrollo
+Los archivos de Vinext, Docker/Render, D1, conectores y sus pruebas históricas se conservan como referencia. Los comandos predeterminados de esta rama utilizan Next.js; la interfaz operativa utiliza Express. Las pruebas `worker-flow.mjs` corresponden a D1 en `main` y no validan esta publicación en Vercel.
 
-Requisitos: Node.js 22.13 o superior y pnpm 11.25.0.
-
-```sh
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-Abrí `http://localhost:5173`. Ese origen debe estar permitido por el backend. No se necesita copiar la contraseña a una variable de entorno: se introduce en el formulario de acceso.
-
-Para el respaldo D1, `.env.example` documenta `PROFESSIONAL_EMAILS`. Ese valor solo se configura en el servidor; no interviene en el login Express. Las migraciones están en `drizzle/`.
-
-## Docker y Render
-
-El [Dockerfile](Dockerfile) compila la salida independiente de Vinext y ejecuta el servidor Node en el puerto `PORT` asignado por Render. El [Blueprint](render.yaml) configura un servicio web gratuito y comprueba `/api/health`. Consultá [la guía de despliegue](docs/despliegue-render.md).
-
-El contenedor aloja esta web y el gateway `/api/v1/*`; la API Express y PostgreSQL siguen alojados en `api.neadev.com`. El backend debe mantener autorizado el origen configurado en `EXPRESS_ALLOWED_ORIGIN`.
-
-## Verificar
-
-```sh
-pnpm exec tsc --noEmit
-pnpm test
-pnpm build
-node --import ./scripts/sites-env.mjs tests/worker-flow.mjs
-```
-
-Las pruebas unitarias cubren CSRF, rotación de sesión, cierre 204, conflictos, límites de reintento y restricciones del gateway. `worker-flow.mjs` verifica el respaldo D1 en una base aislada.
-
-La prueba optativa `tests/express-live-flow.mjs` usa el Worker compilado contra Express real. Recibe un objeto JSON con `email` y `password` por stdin; si se ejecuta en una terminal interactiva, oculta la entrada. **Crea una ficha y consulta ficticias y cancela su turno de prueba**. No debe ejecutarse como parte de las pruebas unitarias. Con `--production --read-only` y un `patientId` de prueba verifica la publicación sin crear registros nuevos.
-
-No incluyas credenciales en argumentos, archivos, Git ni capturas.
-
-## Archivos principales
-
-| Archivo | Responsabilidad |
-|---|---|
-| `lib/express-api.ts` | Cliente tipado, sesión, CSRF, recursos y fechas |
-| `lib/server/express-gateway.ts` | Rutas permitidas, cookies, origen y timeout |
-| `app/api/v1/[...path]/route.ts` | Entrada HTTP del gateway |
-| `components/public/LoginForm.tsx` | Acceso profesional |
-| `components/public/RequestForm.tsx` | Horarios, solicitud y comprobante |
-| `app/panel/ExpressDashboard.tsx` | Panel conectado a Express |
-| `app/panel/Dashboard.tsx` | Prototipos y versión D1 anterior |
-| `docs/api-externa/` | Contrato original recibido, sin credenciales |
-
-Consultá [la integración](docs/integracion-api.md), [la verificación](docs/verificacion.md) y [el estado de entrega](docs/estado-entrega.md) para conocer la evidencia y los pendientes.
-
-## Entregables escritos
-
-- [1. Análisis funcional](docs/entrega/01-analisis-funcional.md)
-- [7. Evidencias de SEO y calidad](docs/entrega/07-evidencias-seo-calidad.md)
-- [8. Documento final](docs/entrega/08-documento-final.md)
+El contrato está en [docs/api-externa](docs/api-externa/). Los documentos de entrega y las evidencias anteriores conservan sus fechas; no constituyen una verificación de Vercel. La guía nueva indica la configuración vigente de esta rama.
