@@ -10,6 +10,8 @@ Next.js 16 aloja la interfaz y el gateway HTTP. Express y PostgreSQL permanecen 
 
 **[Guía para importar el fork en Vercel y configurar la API](docs/despliegue-vercel.md).** Falta conectar el proyecto, configurar sus variables y ejecutar el despliegue real en tu cuenta de Vercel.
 
+Cloudflare Access ya protege `api.neadev.com`. Configurar en Vercel `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` del Service Token autorizado; el gateway las utiliza solo en el servidor.
+
 Usar únicamente datos ficticios. Las credenciales profesionales se entregan por separado y se ingresan en el formulario; no se guardan en Git ni en el frontend.
 
 ## Conexión

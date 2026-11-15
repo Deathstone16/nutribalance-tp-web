@@ -11,7 +11,7 @@ Navegador → Next.js/gateway en Vercel → api.neadev.com por Cloudflare
           → gateway local → Express 127.0.0.1:3001 → PostgreSQL local
 ```
 
-La web de exposición en `https://api.neadev.com` sigue funcionando. Sus rutas `/api/v1` también permiten que Vercel consuma la API local. La API directa de Postman tiene un segundo túnel temporal separado; no hace falta usar esa URL cambiante en Vercel.
+La web de exposición en `https://api.neadev.com` está protegida por Cloudflare Access. Sus rutas `/api/v1` permiten que Vercel consuma la API local cuando se configura el Service Token. La API directa de Postman tiene un segundo túnel temporal separado; no hace falta usar esa URL cambiante en Vercel.
 
 ## 2. Importar en Vercel
 
@@ -40,10 +40,14 @@ Agregar en Production. Configurar Preview por separado si se va a usar:
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` |
 | `PUBLIC_SITE_ORIGIN` | `https://tu-proyecto.vercel.app` |
 | `EXPRESS_ALLOWED_ORIGIN` | `https://api.neadev.com` |
+| `CF_ACCESS_CLIENT_ID` | Client ID de tu Service Token de Cloudflare |
+| `CF_ACCESS_CLIENT_SECRET` | Client Secret del mismo Service Token; marcar como sensible |
 
 Usar en `PUBLIC_SITE_ORIGIN` el dominio HTTPS real de Vercel, sin ruta ni barra final. Si el dominio se conoce después del primer despliegue, corregirlo y volver a desplegar para regenerar metadatos y sitemap.
 
 **Dejar `EXPRESS_LOCAL_API_ORIGIN` sin definir en Vercel.** El loopback `127.0.0.1:3001` solo corresponde al despliegue que corre en tu PC. En Vercel el destino HTTPS ya está fijado en el gateway.
+
+Como Access ya está activo, ambas credenciales son necesarias para el dominio actual. Cargarlas solo en las variables del servidor de Vercel, sin prefijo `NEXT_PUBLIC_`, sin pegarlas en Git ni en este documento. En Cloudflare, la aplicación que cubre `api.neadev.com` debe permitir ese token con una política **Service Auth**. Volver a desplegar después de guardar las variables.
 
 No cargar contraseñas profesionales, `DATABASE_URL`, `SESSION_SECRET`, archivos `.env` privados ni el token de cloudflared. Express conserva sus credenciales y su base en la PC.
 
@@ -81,13 +85,13 @@ La [pipeline local](pipeline-local.md) comprueba Actions de `main` del fork y ap
 
 Consultar [la guía de operación y recuperación](https://github.com/Deathstone16/NutriBalanceExpress/blob/main/docs/despliegue-automatico.md) para detener/reiniciar el agente, revisar versiones activas, respaldos y logs.
 
-## 6. Cloudflare Access opcional
+## 6. Cloudflare Access existente
 
 El gateway admite `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` como variables exclusivas del servidor. Configurar ambas o ninguna; una pareja incompleta devuelve 503. No usar prefijo `NEXT_PUBLIC_`.
 
 No activar una política Access para todo `api.neadev.com` sin preparar también el acceso a la web local: ese hostname publica tanto la interfaz como `/api/v1`. Para restringir el acceso de servidores, conviene preparar un hostname estable exclusivo para Express, configurar Service Auth y adaptar el destino fijo del gateway. Verificar también los demás clientes antes de activar la restricción.
 
-Access no está activado por este cambio. Turnstile tampoco está integrado. Login profesional, CSRF, validación y límites de la API siguen activos.
+El 15/11/2026, Cloudflare Access responde 403 en ese dominio sin token; frontend, API y base responden correctamente en la PC. La comprobación completa desde Vercel queda pendiente de cargar el token y publicar allí. Este cambio no modifica tus políticas de Cloudflare. Turnstile no está integrado. Login profesional, CSRF, validación y límites de la API siguen activos.
 
 ## 7. Diagnóstico
 
