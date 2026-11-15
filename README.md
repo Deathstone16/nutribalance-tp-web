@@ -1,5 +1,7 @@
 # NutriBalance · Frontend en Vercel y API local
 
+**Pipeline de main:** [validación en GitHub y despliegue en la PC](docs/pipeline-local.md). El agente local aplica únicamente commits aprobados por Actions y mantiene disponibles la web y un túnel separado para la API.
+
 **Exposición por Cloudflare:** en la rama `codex/cloudflare-expo`, `pnpm expo` inicia frontend y backend locales. El túnel existente publica el frontend en `https://api.neadev.com`. Ver [cómo iniciar y detener la exposición](docs/exposicion-cloudflare.md).
 
 Rama de preparación: **`codex/vercel-local-api`**. Next.js 16 aloja la interfaz y el gateway HTTP. Express y PostgreSQL permanecen en tu PC, accesibles mediante Cloudflare Tunnel en `https://api.neadev.com`.
