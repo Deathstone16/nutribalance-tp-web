@@ -2,11 +2,13 @@
 
 **Pipeline de main:** [validación en GitHub y despliegue en la PC](docs/pipeline-local.md). El agente local aplica únicamente commits aprobados por Actions y mantiene disponibles la web y un túnel separado para la API.
 
-**Exposición por Cloudflare:** en la rama `codex/cloudflare-expo`, `pnpm expo` inicia frontend y backend locales. El túnel existente publica el frontend en `https://api.neadev.com`. Ver [cómo iniciar y detener la exposición](docs/exposicion-cloudflare.md).
+**Repositorio para publicar:** [Deathstone16/nutribalance-tp-web](https://github.com/Deathstone16/nutribalance-tp-web), fork propio de [Maaupelozo/nutribalance-tp-web](https://github.com/Maaupelozo/nutribalance-tp-web). La rama de producción es `main`. El remoto `origin` apunta al fork y `upstream` conserva el original.
 
-Rama de preparación: **`codex/vercel-local-api`**. Next.js 16 aloja la interfaz y el gateway HTTP. Express y PostgreSQL permanecen en tu PC, accesibles mediante Cloudflare Tunnel en `https://api.neadev.com`.
+**Exposición por Cloudflare:** `pnpm expo` inicia frontend y backend locales. El túnel existente publica la web en `https://api.neadev.com`. Ver [cómo iniciar y detener la exposición](docs/exposicion-cloudflare.md).
 
-**[Guía para subir la rama, publicar y terminar la configuración](docs/despliegue-vercel.md).** Todavía falta crear/configurar el proyecto y ejecutar el despliegue real en tu cuenta de Vercel.
+Next.js 16 aloja la interfaz y el gateway HTTP. Express y PostgreSQL permanecen en tu PC, accesibles mediante Cloudflare Tunnel. La misma versión está preparada para importar el fork en Vercel.
+
+**[Guía para importar el fork en Vercel y configurar la API](docs/despliegue-vercel.md).** Falta conectar el proyecto, configurar sus variables y ejecutar el despliegue real en tu cuenta de Vercel.
 
 Usar únicamente datos ficticios. Las credenciales profesionales se entregan por separado y se ingresan en el formulario; no se guardan en Git ni en el frontend.
 
@@ -65,6 +67,6 @@ La prueba optativa `tests/express-live-flow.mjs --production` permite elegir el 
 
 ## Código y documentación conservados
 
-Los archivos de Vinext, Docker/Render, D1, conectores y sus pruebas históricas se conservan como referencia. Los comandos predeterminados de esta rama utilizan Next.js; la interfaz operativa utiliza Express. Las pruebas `worker-flow.mjs` corresponden a D1 en `main` y no validan esta publicación en Vercel.
+Los archivos de Vinext, Docker/Render, D1, conectores y sus pruebas históricas se conservan como referencia. Los comandos predeterminados utilizan Next.js; la interfaz operativa utiliza Express. Las pruebas `worker-flow.mjs` corresponden a la versión histórica con D1 y no validan esta publicación en Vercel.
 
 El contrato está en [docs/api-externa](docs/api-externa/). Los documentos de entrega y las evidencias anteriores conservan sus fechas; no constituyen una verificación de Vercel. La guía nueva indica la configuración vigente de esta rama.

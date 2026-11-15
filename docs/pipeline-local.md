@@ -1,5 +1,7 @@
 # Pipeline del frontend
 
+Repositorio operativo: [Deathstone16/nutribalance-tp-web](https://github.com/Deathstone16/nutribalance-tp-web). El agente consulta `main` de este fork. `origin` apunta al fork propio y `upstream` al original de Mauricio.
+
 `.github/workflows/ci-local.yml` se ejecuta al hacer push a `main`, abrir un PR hacia `main` o iniciarla manualmente. Usa Node.js 24 y pnpm 11.25.0; instala el lockfile, ejecuta las pruebas, compila Next.js y comprueba TypeScript.
 
 Solo un push o ejecución manual en `main` con validación aprobada solicita un despliegue al entorno `local-cloudflare`. Las solicitudes de PR no despliegan.
@@ -25,3 +27,5 @@ La aplicación continúa activa. Para reiniciar el agente:
 ```
 
 Consultar `deployment/state.json` para identificar los commits realmente activos. Una pipeline verde puede estar esperando a que la PC esté conectada; el estado de GitHub Deployments confirma el despliegue.
+
+Al importar este mismo fork en Vercel con producción en `main`, Vercel también despliega automáticamente sus nuevos commits. Configurar ese proyecto según [despliegue-vercel.md](despliegue-vercel.md); la configuración de loopback de la PC no se copia a Vercel.

@@ -1,39 +1,24 @@
-# Publicar el frontend en Vercel con la API en tu PC
+# Publicar el fork en Vercel con la API en tu PC
 
-Preparación: 15 de noviembre de 2026. Rama: **`codex/vercel-local-api`**.
+Actualizado: 15 de noviembre de 2026.
 
-## 1. Qué queda preparado
+## 1. Repositorio preparado
 
-El frontend usa Next.js 16 y Node.js 24. `vercel.json` fija el framework y los comandos. Se conservan la interfaz y el gateway `/api/v1`, conectado al destino fijo `https://api.neadev.com`.
-
-Las rutas antiguas `/api/panel` y `/api/solicitudes` devuelven HTTP 410 y no cargan D1. La sesión mantiene HttpOnly, Secure, SameSite=Lax y Path=/api/v1. Las escrituras comprueban el origen del navegador y CSRF. El gateway admite credenciales opcionales de Cloudflare Access, exclusivamente en el servidor.
+Importar **[Deathstone16/nutribalance-tp-web](https://github.com/Deathstone16/nutribalance-tp-web)**, rama **`main`**. Es tu fork de Mauricio, con Next.js 16, Node.js 24, gateway de Express y `vercel.json`. El remoto local `origin` apunta a tu fork; `upstream` conserva el original.
 
 ```text
-Navegador → frontend/gateway en Vercel → Cloudflare Tunnel → Express/PostgreSQL en tu PC
+Navegador → Next.js/gateway en Vercel → api.neadev.com por Cloudflare
+          → gateway local → Express 127.0.0.1:3001 → PostgreSQL local
 ```
 
-Esta preparación no publica en Vercel, no modifica `main`, no instala tareas de Windows ni activa políticas de Cloudflare. Los archivos históricos de Vinext/D1 se conservan como referencia.
+La web de exposición en `https://api.neadev.com` sigue funcionando. Sus rutas `/api/v1` también permiten que Vercel consuma la API local. La API directa de Postman tiene un segundo túnel temporal separado; no hace falta usar esa URL cambiante en Vercel.
 
-## 2. Subir la rama a GitHub
+## 2. Importar en Vercel
 
-En PowerShell, dentro del repositorio independiente del frontend:
-
-```powershell
-Set-Location 'C:\Users\Bruno\Desktop\Nutri_express\frontend'
-git status
-git branch --show-current
-git push --set-upstream origin codex/vercel-local-api
-```
-
-Debe mostrarse `codex/vercel-local-api`. Repositorio: [Maaupelozo/nutribalance-tp-web](https://github.com/Maaupelozo/nutribalance-tp-web). Si GitHub rechaza el push por permisos, el propietario debe darte acceso o debés subir la rama a un fork e importar ese fork. No reemplazar `main` ni forzar el push.
-
-`.env*`, `.vercel`, `.next`, `node_modules` y el estado local están ignorados. `.env.example` contiene ejemplos sin secretos operativos.
-
-## 3. Crear el proyecto y seleccionar la rama
-
-1. Entrar a [Vercel](https://vercel.com/new) e importar el repositorio que recibió la rama. Si no aparece, revisar el acceso de la integración de GitHub.
-2. Elegir `codex/vercel-local-api` si el asistente permite seleccionar la rama.
-3. Usar estos valores:
+1. Entrar a [New Project](https://vercel.com/new) con tu cuenta vinculada a GitHub.
+2. Seleccionar **Deathstone16/nutribalance-tp-web**. Si no aparece, habilitar ese fork en los permisos de la integración de GitHub de Vercel.
+3. Elegir `main` como rama de producción.
+4. Usar estos valores:
 
 | Opción | Valor |
 |---|---|
@@ -42,174 +27,92 @@ Debe mostrarse `codex/vercel-local-api`. Repositorio: [Maaupelozo/nutribalance-t
 | Node.js | 24.x |
 | Install Command | `corepack pnpm install --frozen-lockfile` |
 | Build Command | `corepack pnpm run build` |
-| Output Directory | Automático de Next.js: `.next` |
+| Output Directory | Automático de Next.js |
 
-La carpeta local se llama `frontend`, pero GitHub contiene sus archivos en la raíz. **No poner `frontend` como Root Directory en Vercel.** `vercel.json` ya define los comandos.
+La carpeta local se llama `frontend`, pero GitHub contiene sus archivos en la raíz. **No poner `frontend` como Root Directory.** `vercel.json` ya fija framework y comandos.
 
-Vercel suele elegir `main`. Ir a **Settings → Environments → Production → Branch Tracking**, colocar `codex/vercel-local-api` y guardar. Si la importación inicial tomó `main`, configurar la rama y crear otro despliegue desde **Deployments → Create Deployment** con:
+## 3. Variables de Vercel
 
-```text
-https://github.com/Maaupelozo/nutribalance-tp-web/tree/codex/vercel-local-api
-```
+Agregar en Production. Configurar Preview por separado si se va a usar:
 
-Si usás un fork, reemplazar el propietario. Confirmar la rama en los detalles antes de usar la publicación definitiva.
-
-## 4. Variables del frontend
-
-En **Settings → Environment Variables**, agregar para **Production** y también para **Preview** si vas a probar ese entorno:
-
-| Variable | Valor inicial | Propósito |
-|---|---|---|
-| `ENABLE_EXPERIMENTAL_COREPACK` | `1` | pnpm 11.25.0 fijado en el proyecto |
-| `PUBLIC_SITE_ORIGIN` | `https://tu-proyecto.vercel.app` | Dominio real, metadatos y sitemap |
-| `EXPRESS_ALLOWED_ORIGIN` | `https://nutribalance-mauricio.maauri.chatgpt.site` | Origen ya configurado en la API actual |
-| `CF_ACCESS_CLIENT_ID` | Sin definir inicialmente | Opcional, sección 8 |
-| `CF_ACCESS_CLIENT_SECRET` | Sin definir inicialmente | Opcional, sección 8 |
-
-Reemplazar el dominio de ejemplo por el asignado o por un dominio propio ya vinculado. Usar HTTPS, sin ruta ni barra final. Después de cambiar variables, **volver a desplegar**: los metadatos se generan durante la compilación.
-
-No cargar en Vercel la contraseña profesional, `DATABASE_URL`, `SESSION_SECRET` ni el token de `cloudflared`: pertenecen al backend local. Las credenciales de Access nunca llevan el prefijo `NEXT_PUBLIC_`.
-
-### Mantener el backend actual en la primera publicación
-
-El navegador llama al gateway del propio sitio de Vercel. Este comprueba el origen real y después envía `EXPRESS_ALLOWED_ORIGIN` a Express. Conservar el origen actual permite probar Vercel sin cambiar el backend ni la web anterior. Las llamadas de datos van a `api.neadev.com`, no al sitio anterior.
-
-Si después querés cambiar también el origen de Express, editar el `.env` del **backend**:
-
-```dotenv
-TUNNEL_APP_ORIGIN=https://tu-proyecto.vercel.app
-```
-
-Reiniciar la API y colocar exactamente el mismo valor en `EXPRESS_ALLOWED_ORIGIN` de Vercel. El perfil `serve:portable:tunnel` toma `TUNNEL_APP_ORIGIN`; cambiar solamente `APP_ORIGIN` no reemplaza ese perfil. Coordinar los otros clientes que sigan usando la API. CORS controla el uso desde navegadores; la restricción entre servidores se agrega con Access.
-
-## 5. API y túnel en la PC
-
-Usar el `.env` privado existente, conservando URLs, contraseñas y datos. No reemplazarlo por la plantilla. Para arrancar manualmente:
-
-```powershell
-Set-Location 'C:\Users\Bruno\Desktop\Nutri_express\backend'
-npm run serve:portable:tunnel
-```
-
-El comando utiliza PostgreSQL si responde o inicia la base portable existente, aplica migraciones pendientes, prepara la cuenta ficticia si falta, compila e inicia Express. No iniciar otra copia si `/health` ya responde.
-
-Cloudflare Tunnel está instalado como servicio automático. El origen debe seguir siendo **`api.neadev.com → http://127.0.0.1:3000`**, sin `/api/v1` al final. Si cambia `PORT`, cambiar también el origen del túnel. PostgreSQL permanece privado; no publicar su puerto.
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:3000/health
-Invoke-RestMethod https://api.neadev.com/health
-Get-Service Cloudflared
-```
-
-Ambos healthchecks deben devolver `status: ok`. Después de activar Access, el chequeo público directo requiere autorización: usar preferentemente el verificador del frontend.
-
-## 6. Arranque automático en Windows
-
-Cloudflare ya inicia como servicio. Para la API y su base portable, crear una tarea en **Programador de tareas → Crear tarea**:
-
-1. Nombre: `NutriBalance API`. Elegir el usuario con acceso al proyecto y al `.env`; para el caso simple, ejecutar solo cuando ese usuario haya iniciado sesión.
-2. Desencadenador: **Al iniciar sesión**, con demora de 30 segundos.
-3. Acción: iniciar un programa con estos valores:
-
-| Campo | Valor |
+| Variable | Valor |
 |---|---|
-| Programa | `C:\Program Files\nodejs\node.exe` |
-| Argumentos | `--import tsx scripts/arrancar.ts --portable --tunel` |
-| Iniciar en | `C:\Users\Bruno\Desktop\Nutri_express\backend` |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1` |
+| `PUBLIC_SITE_ORIGIN` | `https://tu-proyecto.vercel.app` |
+| `EXPRESS_ALLOWED_ORIGIN` | `https://api.neadev.com` |
 
-4. Configuración: reintentar cada minuto si falla, hasta tres veces; **no iniciar una instancia nueva** si ya está ejecutándose; quitar el límite de duración.
-5. Revisar las condiciones de energía para evitar que se detenga al cambiar a batería. Mantener la PC sin suspensión durante el servicio.
-6. Para la primera prueba, reiniciar la PC e iniciar sesión: así la tarea no compite con la copia temporal que ya estaba ejecutándose.
-7. Comprobar que la tarea esté activa, que `/health` responda y que funcione la URL pública.
+Usar en `PUBLIC_SITE_ORIGIN` el dominio HTTPS real de Vercel, sin ruta ni barra final. Si el dominio se conoce después del primer despliegue, corregirlo y volver a desplegar para regenerar metadatos y sitemap.
 
-Esto inicia la API **después de entrar a Windows**. Un servicio sin iniciar sesión requiere una cuenta de servicio o tarea con sus permisos y credenciales. Esta rama no instala la tarea ni cambia opciones de energía.
+**Dejar `EXPRESS_LOCAL_API_ORIGIN` sin definir en Vercel.** El loopback `127.0.0.1:3001` solo corresponde al despliegue que corre en tu PC. En Vercel el destino HTTPS ya está fijado en el gateway.
 
-## 7. Verificar desde la web
+No cargar contraseñas profesionales, `DATABASE_URL`, `SESSION_SECRET`, archivos `.env` privados ni el token de cloudflared. Express conserva sus credenciales y su base en la PC.
 
-Desde la carpeta del frontend, con Node 24 y dependencias instaladas:
+`EXPRESS_ALLOWED_ORIGIN=https://api.neadev.com` coincide con la configuración efectiva de la exposición local. El gateway de Vercel comprueba por separado el origen del navegador y utiliza este valor únicamente en la conexión entre servidores. No hace falta cambiar el `.env` del backend para publicar Vercel con esta arquitectura.
+
+## 4. Desplegar y verificar
+
+Presionar **Deploy** y confirmar en los detalles que se publicó `main` de tu fork. Después de conectar el repositorio, los pushes a `main` generan nuevos despliegues de producción en Vercel.
+
+Desde el frontend local:
 
 ```powershell
 corepack pnpm check:public https://tu-proyecto.vercel.app
 ```
 
-Esperado: **8/8 controles aprobados**, sin crear pacientes, turnos o consultas. Comprueba frontend, disponibilidad, cookie segura, rechazo anónimo, origen ajeno y HTTP 410 de las rutas D1. `/api/health` solo comprueba el frontend; `/api/v1` verifica Express.
+Esperado: 8/8 controles aprobados. Verifica portada, disponibilidad, cookie segura, rechazo anónimo, origen ajeno y rutas D1 antiguas desactivadas, sin crear registros. `/api/health` solo comprueba Next.js; `/api/v1` verifica la conexión con Express.
 
-Si Preview exige iniciar sesión en Vercel, ese bloqueo impide el chequeo automático. Usar Production pública o la configuración de acceso aprobada para ese entorno.
+Desde otro dispositivo, abrir `/solicitar-turno`, ingresar en `/ingresar`, abrir una ficha ficticia con historial, recargar y cerrar sesión. Las credenciales profesionales se consultan de forma privada; no se guardan en Git ni en capturas.
 
-Desde otro equipo o un teléfono con datos móviles:
+La sesión usa cookie HttpOnly, Secure, SameSite=Lax y Path=/api/v1. Las escrituras conservan CSRF y comprobación del origen. Las rutas históricas `/api/panel` y `/api/solicitudes` devuelven 410; la interfaz utiliza Express.
 
-1. Abrir portada y horarios en `/solicitar-turno`.
-2. Ingresar en `/ingresar` con la cuenta de Express. Las credenciales están en el `.env` privado del backend; una cuenta existente conserva su clave.
-3. Crear o abrir una ficha ficticia y comprobar que persiste al recargar.
-4. Solicitar un turno ficticio y confirmarlo vinculándolo a esa ficha.
-5. Guardar una consulta independiente y recargar el historial. Una consulta vinculada requiere que el turno confirmado ya haya comenzado.
-6. Cancelar el turno de prueba para liberar el horario.
-7. Cerrar sesión y comprobar que el panel exige acceso nuevamente.
+## 5. Mantener la PC disponible
 
-### Verificación HTTP optativa con credenciales
+La PC debe seguir encendida, conectada, con el usuario iniciado y sin suspensión. El agente de despliegue inicia frontend, API y PostgreSQL después de entrar a Windows; Cloudflare ya tiene un servicio automático. No iniciar otra copia de Express ni crear otra tarea que compita por los puertos.
 
-```powershell
-$env:TEST_SITE_ORIGIN='https://tu-proyecto.vercel.app'
-node tests/express-live-flow.mjs --production --read-only
-```
+| Servicio | Dirección |
+|---|---|
+| Frontend local | `http://127.0.0.1:3000/api/health` |
+| API local y base | `http://127.0.0.1:3001/health` |
+| Web y gateway públicos | `https://api.neadev.com` |
 
-Espera una línea JSON por stdin, oculta en terminal, con `email`, `password` y `patientId` de una ficha ficticia con historial. No poner credenciales en argumentos ni guardarlas en archivos. `--read-only` comprueba sesión, ficha, historial y logout sin crear registros. Sin esa opción crea una ficha y consulta ficticias, cancela su turno y conserva esos registros como verificación.
+El túnel fijo debe seguir apuntando a **127.0.0.1:3000**, donde corre Next.js. El gateway local comunica con Express en 3001. PostgreSQL permanece privado. No cambiar el túnel a 3001 porque se perdería la web de exposición.
 
-## 8. Cloudflare Access, opcional
+La [pipeline local](pipeline-local.md) comprueba Actions de `main` del fork y aplica los cambios en la PC. El backend tiene su propia pipeline. Vercel mantiene su integración Git por separado; sus despliegues pueden coexistir con Cloudflare.
 
-El código está preparado; no se creó ni activó una política en la cuenta.
+Consultar [la guía de operación y recuperación](https://github.com/Deathstone16/NutriBalanceExpress/blob/main/docs/despliegue-automatico.md) para detener/reiniciar el agente, revisar versiones activas, respaldos y logs.
 
-1. En Zero Trust, crear un **Service Token** para el gateway de Vercel y guardar el secreto en el gestor de credenciales del equipo.
-2. Cargar sus valores en `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` de Vercel. Marcar el secreto como sensible y volver a desplegar.
-3. Preparar también la web anterior u otros clientes que deban seguir usando la API antes de restringir el hostname.
-4. Crear una aplicación Access para `api.neadev.com`, con política **Service Auth** que permita ese token. Evitar bypass generales.
-5. Confirmar que el acceso directo sin token se rechace y que `check:public` mediante Vercel siga aprobando.
+## 6. Cloudflare Access opcional
 
-El gateway incorpora las credenciales desde sus variables y no acepta esos encabezados desde el navegador. Si se configura solo uno de los valores, devuelve HTTP 503 hasta completar la configuración. El login profesional y CSRF siguen activos.
+El gateway admite `CF_ACCESS_CLIENT_ID` y `CF_ACCESS_CLIENT_SECRET` como variables exclusivas del servidor. Configurar ambas o ninguna; una pareja incompleta devuelve 503. No usar prefijo `NEXT_PUBLIC_`.
 
-Turnstile y nuevas reglas WAF quedan como mejoras posteriores; Turnstile no está integrado. Los límites por IP de la API verán las direcciones de salida de Vercel: antes de endurecerlos, ajustar la estrategia para no bloquear usuarios conjuntamente. No confiar en encabezados de IP arbitrarios del navegador.
+No activar una política Access para todo `api.neadev.com` sin preparar también el acceso a la web local: ese hostname publica tanto la interfaz como `/api/v1`. Para restringir el acceso de servidores, conviene preparar un hostname estable exclusivo para Express, configurar Service Auth y adaptar el destino fijo del gateway. Verificar también los demás clientes antes de activar la restricción.
 
-## 9. Diagnóstico y vuelta atrás
+Access no está activado por este cambio. Turnstile tampoco está integrado. Login profesional, CSRF, validación y límites de la API siguen activos.
+
+## 7. Diagnóstico
 
 | Síntoma | Revisar |
 |---|---|
-| Compilación falla por `cloudflare:workers` | Selección de rama: `main` no tiene esta adaptación |
-| Error de instalación/pnpm | Node 24, Corepack habilitado y versión fijada |
-| Portada abre, panel o turnos fallan | API local, túnel y controles `/api/v1` |
-| 502 o 530 de Cloudflare | PC, Internet, Express, Cloudflared y origen del túnel |
-| 403 | Dominio, origen del gateway, política Access y credenciales |
-| 503 `GATEWAY_MISCONFIGURED` | Completar ambas variables de Access o quitar ambas si no se usa |
-| 401 en pacientes sin sesión | Es esperado; ingresar con la cuenta profesional |
-| 429 | Esperar `Retry-After`; revisar límites compartidos de salida de Vercel |
-| Sitemap apunta al sitio anterior | Corregir `PUBLIC_SITE_ORIGIN` y volver a desplegar |
-| 410 en rutas D1 antiguas | Es esperado; la interfaz utiliza `/api/v1` |
+| El fork no aparece | Cuenta `Deathstone16` y permisos de la integración de Vercel |
+| Error `cloudflare:workers` | Importar tu fork actualizado, rama `main`, framework Next.js |
+| Error de pnpm | Node 24, Corepack y comando de instalación del proyecto |
+| Portada abre pero datos fallan | API en 3001, web en 3000, túnel y `/api/v1` |
+| 502/530 o gateway no disponible | PC, Internet, Cloudflared, servicios y ausencia de loopback en Vercel |
+| 403 | `EXPRESS_ALLOWED_ORIGIN`, dominio y política Access |
+| 503 de configuración | Pareja completa de credenciales Access o ambas sin definir |
+| 401 sin sesión | Ingresar con la cuenta profesional |
+| 429 | Esperar `Retry-After`; los gateways comparten límites por IP de salida |
+| Sitemap incorrecto | `PUBLIC_SITE_ORIGIN` y nuevo despliegue |
 
-Conservar la publicación anterior y `main` para volver atrás. Un rollback del frontend no revierte migraciones del backend. Después de activar Access, un frontend anterior también necesita credenciales autorizadas para consumir la API.
+Un rollback del frontend no revierte cambios de esquema ni datos del backend. Los archivos históricos de Vinext/D1 se conservan como referencia.
 
-## 10. Evidencia y pendientes
+## 8. Qué falta en Vercel
 
-Verificado localmente el 15/11/2026:
-
-| Control | Resultado |
-|---|---|
-| Instalación `corepack pnpm install --frozen-lockfile` | Aprobada con pnpm 11.25.0 |
-| Compilación Next.js de producción | Aprobada, incluidas sus comprobaciones TypeScript |
-| `pnpm typecheck` | Aprobado |
-| `pnpm test` | 21 pruebas aprobadas |
-| `check:public` contra Next.js compilado y Express por Cloudflare | 8/8 aprobados |
-| Login, cookie, lectura de ficha ficticia existente, historial y logout | Aprobados por HTTP; cero registros nuevos |
-| Navegador en Next.js compilado | 16 horarios disponibles para la fecha de prueba y redirección al login al entrar al panel sin sesión |
-
-El frontend de verificación se ejecutó en localhost:5173 y consumió la API real mediante `api.neadev.com`. Las comprobaciones de Cloudflare Access usan credenciales ficticias en pruebas automatizadas; no se verificó una política real de Access ni se publicó en Vercel.
-
-Una comprobación local no equivale a una publicación en Vercel. Quedan: push de la rama, proyecto de Vercel, dominio y variables, despliegue real, recorrido desde otro dispositivo y tarea automática de Windows. Access es opcional y se activa después de integrar sus credenciales.
-
-Las pruebas `worker-flow.mjs` corresponden a D1 en `main`. Los documentos anteriores conservan sus fechas y no prueban este despliegue. No borrar ni transformar bases para cambiar de frontend.
+El código, el fork y la configuración están preparados. La publicación real requiere importar el fork en tu cuenta de Vercel, cargar las variables, desplegar y verificar la URL resultante. La compilación y las pruebas locales/Actions no sustituyen esa comprobación del entorno publicado.
 
 ## Fuentes oficiales
 
-- [Vercel: Git y rama de producción](https://vercel.com/docs/git).
+- [Vercel: Git e integración de despliegues](https://vercel.com/docs/git).
 - [Vercel: compilación y Corepack](https://vercel.com/docs/builds/configure-a-build).
-- [Vercel: vercel.json](https://vercel.com/docs/project-configuration/vercel-json).
-- [Next.js: comandos](https://nextjs.org/docs/app/api-reference/cli/next).
-- [Cloudflare Access: service tokens](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
+- [Vercel: variables de entorno](https://vercel.com/docs/environment-variables).
+- [Cloudflare Access: Service Tokens](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
