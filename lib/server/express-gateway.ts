@@ -21,7 +21,26 @@ export async function forwardExpress(request:Request){
   const allowed=routes.find(([pattern])=>pattern.test(path));
   if(!allowed)return error(404,'NOT_FOUND','No se encontró el recurso.');
   if(!allowed[1].includes(request.method))return error(405,'METHOD_NOT_ALLOWED','Esta acción no está disponible.');
-  if(request.method!=='GET'&&request.headers.get('Origin')!==url.origin)return error(403,'ORIGIN_INVALID','Volvé a abrir el formulario desde NutriBalance.');
+  const localApi=process.env.EXPRESS_LOCAL_API_ORIGIN;
+  let browserOrigin=url.origin;
+  if(localApi&&process.env.PUBLIC_SITE_ORIGIN){
+    try{
+      const configured=new URL(process.env.PUBLIC_SITE_ORIGIN);
+      if(configured.protocol!=='https:'||configured.origin!==process.env.PUBLIC_SITE_ORIGIN)throw new Error('Invalid public origin');
+      // Next.js may construct request.url from its HTTP loopback listener behind Tunnel.
+      // Compare against server configuration, never an arbitrary forwarded host header.
+      browserOrigin=configured.origin;
+    }catch{return error(503,'GATEWAY_MISCONFIGURED','El origen público requiere configuración.')}
+  }
+  if(request.method!=='GET'&&request.headers.get('Origin')!==browserOrigin)return error(403,'ORIGIN_INVALID','Volvé a abrir el formulario desde NutriBalance.');
+  let apiOrigin=UPSTREAM;
+  if(localApi){
+    try{
+      const local=new URL(localApi);
+      if(local.protocol!=='http:'||local.hostname!=='127.0.0.1'||!local.port||local.origin!==localApi)throw new Error('Invalid local API');
+      apiOrigin=local.origin;
+    }catch{return error(503,'GATEWAY_MISCONFIGURED','La conexión local con el consultorio requiere configuración.')}
+  }
   const accessId=process.env.CF_ACCESS_CLIENT_ID;
   const accessSecret=process.env.CF_ACCESS_CLIENT_SECRET;
   if(Boolean(accessId)!==Boolean(accessSecret))return error(503,'GATEWAY_MISCONFIGURED','La conexión con el consultorio requiere configuración.');
@@ -30,6 +49,9 @@ export async function forwardExpress(request:Request){
     ? new URL(process.env.EXPRESS_ALLOWED_ORIGIN).origin
     : url.origin;
   const headers=new Headers({Accept:'application/json',Origin:upstreamOrigin});
+  // The browser uses HTTPS at Cloudflare; this trusted server hop stays on loopback.
+  // Never relay browser-supplied forwarding headers to Express.
+  if(localApi)headers.set('X-Forwarded-Proto','https');
   // These credentials belong to the server; never accept them from the browser.
   if(accessId&&accessSecret){
     headers.set('CF-Access-Client-Id',accessId);
@@ -47,7 +69,7 @@ export async function forwardExpress(request:Request){
     if(body){if(!request.headers.get('Content-Type')?.includes('application/json'))return error(415,'INVALID_CONTENT_TYPE','El formulario no tiene un formato válido.');headers.set('Content-Type','application/json')}
   }
   try{
-    const upstream=await fetch(UPSTREAM+PREFIX+path+url.search,{method:request.method,headers,body,redirect:'manual',signal:AbortSignal.timeout(15000)});
+    const upstream=await fetch(apiOrigin+PREFIX+path+url.search,{method:request.method,headers,body,redirect:'manual',signal:AbortSignal.timeout(15000)});
     if(upstream.status>=300&&upstream.status<400)return error(502,'UPSTREAM_UNAVAILABLE','No pudimos completar la acción. Volvé a intentar.');
     if(upstream.status!==204&&!upstream.headers.get('Content-Type')?.includes('application/json'))return error(502,'UPSTREAM_UNAVAILABLE','No pudimos completar la acción. Volvé a intentar.');
     const output=new Headers({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});

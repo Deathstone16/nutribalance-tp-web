@@ -14,6 +14,8 @@
     "start:render": "node dist/standalone/server.js",
     "start": "next start --port 5173 --hostname 127.0.0.1",
     "check:public": "node --env-file-if-exists=.env.local scripts/check-public.mjs",
+    "expo": "node --env-file-if-exists=.env.local scripts/serve-expo.mjs",
+    "expo:stop": "node scripts/serve-expo.mjs --detener",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "test": "node --test tests/domain.test.mjs tests/api-client.test.mjs tests/express-api.test.mjs",

@@ -155,3 +155,40 @@ test('retired D1 endpoints return an explicit non-cacheable response',async()=>{
   assert.equal(response.status,410);assert.equal(response.headers.get('Cache-Control'),'no-store');
   assert.equal((await response.json()).error.code,'LEGACY_API_DISABLED');
 });
+
+test('the local exhibition reaches Express directly and preserves HTTPS session semantics',async t=>{
+  const previous=process.env.EXPRESS_LOCAL_API_ORIGIN;
+  process.env.EXPRESS_LOCAL_API_ORIGIN='http://127.0.0.1:3001';
+  t.after(()=>{if(previous===undefined)delete process.env.EXPRESS_LOCAL_API_ORIGIN;else process.env.EXPRESS_LOCAL_API_ORIGIN=previous});
+  const {forwardExpress}=await moduleAt('../lib/server/express-gateway.ts');let received;
+  t.mock.method(globalThis,'fetch',async(url,options)=>{received={url,...options};return Response.json({csrfToken:'test-token'})});
+  const response=await forwardExpress(new Request('https://api.neadev.com/api/v1/auth/csrf',{headers:{'X-Forwarded-Proto':'http','X-Forwarded-For':'198.51.100.1'}}));
+  assert.equal(response.status,200);assert.equal(received.url,'http://127.0.0.1:3001/api/v1/auth/csrf');
+  assert.equal(received.headers.get('X-Forwarded-Proto'),'https');assert.equal(received.headers.get('X-Forwarded-For'),null);
+});
+
+test('local API configuration rejects external targets, credentials and paths',async t=>{
+  const previous=process.env.EXPRESS_LOCAL_API_ORIGIN;
+  t.after(()=>{if(previous===undefined)delete process.env.EXPRESS_LOCAL_API_ORIGIN;else process.env.EXPRESS_LOCAL_API_ORIGIN=previous});
+  const {forwardExpress}=await moduleAt('../lib/server/express-gateway.ts');let calls=0;
+  t.mock.method(globalThis,'fetch',async()=>{calls++;throw new Error('must not fetch')});
+  for(const origin of ['http://example.test:3001','http://127.0.0.1:3001/path','http://user:password@127.0.0.1:3001','http://127.0.0.1:3001?target=other']){
+    process.env.EXPRESS_LOCAL_API_ORIGIN=origin;
+    const response=await forwardExpress(new Request('https://api.neadev.com/api/v1/auth/csrf'));
+    assert.equal(response.status,503);assert.equal((await response.json()).error.code,'GATEWAY_MISCONFIGURED');
+  }
+  assert.equal(calls,0);
+});
+
+test('Tunnel writes use the configured HTTPS origin despite the internal HTTP listener',async t=>{
+  const keys=['EXPRESS_LOCAL_API_ORIGIN','PUBLIC_SITE_ORIGIN'];const previous=keys.map(key=>process.env[key]);
+  t.after(()=>keys.forEach((key,index)=>{if(previous[index]===undefined)delete process.env[key];else process.env[key]=previous[index]}));
+  process.env.EXPRESS_LOCAL_API_ORIGIN='http://127.0.0.1:3001';process.env.PUBLIC_SITE_ORIGIN='https://api.neadev.com';
+  const {forwardExpress}=await moduleAt('../lib/server/express-gateway.ts');let calls=0;
+  t.mock.method(globalThis,'fetch',async()=>{calls++;return Response.json(session)});
+  const options={method:'POST',headers:{Origin:'https://api.neadev.com','Content-Type':'application/json'},body:'{}'};
+  assert.equal((await forwardExpress(new Request('http://localhost:3000/api/v1/auth/login',options))).status,200);
+  options.headers.Origin='https://foreign.test';
+  assert.equal((await forwardExpress(new Request('http://localhost:3000/api/v1/auth/login',options))).status,403);
+  assert.equal(calls,1);
+});
