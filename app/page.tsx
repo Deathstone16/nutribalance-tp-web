@@ -18,11 +18,11 @@ export const metadata: Metadata = {
 const steps = [
   {
     title: 'Elegí fecha y horario',
-    description: 'Consultá la disponibilidad y enviá tu solicitud.',
+    description: 'Consultá los horarios disponibles y enviá tu solicitud.',
   },
   {
-    title: 'Recibí la confirmación',
-    description: 'Mauricio revisa el horario solicitado y confirma el turno o coordina otro.',
+    title: 'Esperá la confirmación',
+    description: 'Recibís un código de solicitud. Mauricio revisa el horario antes de confirmarlo.',
   },
   {
     title: 'Continuá en cada consulta',
@@ -51,7 +51,7 @@ export default function Home() {
               los próximos pasos.
             </p>
             <div className="hero-actions">
-              <a className="btn" href="/solicitar-turno">
+              <a className="home-request-cta" href="/solicitar-turno">
                 Solicitar turno
               </a>
             </div>
@@ -86,8 +86,8 @@ export default function Home() {
               <span>al seguimiento.</span>
             </h2>
             <p>
-              El formulario registra un pedido pendiente. Mauricio confirma el horario antes del
-              encuentro.
+              Enviar el formulario registra una solicitud pendiente. Mauricio revisa el horario y
+              confirma el turno antes del encuentro.
             </p>
           </div>
           <ol className="booking-steps">
@@ -100,7 +100,10 @@ export default function Home() {
               </li>
             ))}
           </ol>
-          <a className="btn booking-cta" href="/solicitar-turno">
+          <a
+            className="home-request-cta home-request-cta--light booking-cta"
+            href="/solicitar-turno"
+          >
             Solicitar turno
           </a>
         </section>
@@ -131,8 +134,11 @@ export default function Home() {
               <div className="faq-card-top">
                 <h3>¿La solicitud confirma mi turno?</h3>
               </div>
-              <p>No. Mauricio revisa la fecha y el horario antes de confirmar el encuentro.</p>
-              <span className="faq-card-foot">Confirmación de Mauricio</span>
+              <p>
+                No. Al enviar el formulario recibís un código de solicitud y el turno queda
+                pendiente. Mauricio revisa el pedido antes de confirmarlo.
+              </p>
+              <span className="faq-card-foot">Primero, solicitud pendiente</span>
             </article>
             <article id="faq-seguimiento" className="faq-card">
               <div className="faq-card-top">
@@ -145,7 +151,7 @@ export default function Home() {
               <span className="faq-card-foot">Próximo encuentro</span>
             </article>
           </div>
-          <a className="faq-cta" href="/solicitar-turno">
+          <a className="home-request-cta faq-cta" href="/solicitar-turno">
             Solicitar turno
           </a>
         </section>

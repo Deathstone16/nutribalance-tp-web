@@ -130,32 +130,17 @@
 }
 
 .editorial-home .faq-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-height: 49px;
   margin-top: 42px;
-  padding: 10px 24px;
-  border: 1px solid var(--home-forest);
-  border-radius: 100px;
-  background: var(--home-forest);
-  color: #fff9e9;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.editorial-home .faq-cta:hover {
-  background: #205746;
 }
 
 .editorial-home .home-footer {
+  --home-footer-ink: #08241c;
   position: relative;
   max-width: 1360px;
   margin: 0 auto;
   padding: 77px 72px 58px;
   background: #ed6a1d;
-  color: var(--home-forest);
+  color: var(--home-footer-ink);
   border-radius: 0 0 6px 6px;
 }
 
@@ -181,7 +166,7 @@
 }
 
 .editorial-home .home-footer .wordmark {
-  color: var(--home-forest);
+  color: var(--home-footer-ink);
 }
 .editorial-home .home-footer .wordmark > span {
   font-size: clamp(43px, 4vw, 60px);
@@ -194,13 +179,13 @@
   color: #fff4d8;
 }
 .editorial-home .home-footer .wordmark small {
-  color: var(--home-forest);
+  color: var(--home-footer-ink);
   font-size: 12px;
 }
 .editorial-home .home-footer-brand p {
   max-width: 230px;
   margin-top: 22px;
-  color: var(--home-forest);
+  color: var(--home-footer-ink);
   font-size: 14px;
   line-height: 1.55;
 }
@@ -211,7 +196,7 @@
 }
 .editorial-home .home-footer nav h2 {
   margin: 7px 0 18px;
-  color: var(--home-forest);
+  color: var(--home-footer-ink);
   font:
     700 24px/1 'Barlow Condensed',
     'Arial Narrow',
@@ -222,9 +207,9 @@
 .editorial-home .home-footer nav a {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  color: var(--home-forest);
-  font-size: 13px;
+  min-height: 44px;
+  color: var(--home-footer-ink);
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
   text-decoration: none;
@@ -320,6 +305,6 @@
     font-size: 22px;
   }
   .editorial-home .home-footer nav a {
-    font-size: 12px;
+    font-size: 13px;
   }
 }
