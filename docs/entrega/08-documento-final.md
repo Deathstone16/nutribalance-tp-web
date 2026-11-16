@@ -6,7 +6,7 @@
 
 | Capa | Tecnología y función |
 |---|---|
-| Interfaz | React, TypeScript, Vinext/Vite y CSS propio; fuentes locales Manrope y Source Serif 4. |
+| Interfaz | React, TypeScript, Vinext/Vite y CSS propio; fuentes locales Barlow Condensed, Instrument Serif y DM Sans en la web pública. |
 | Web publicada | Cloudflare Worker mediante Sites; páginas públicas y gateway `/api/v1/*`. |
 | Backend | API Express externa en `api.neadev.com`; sesiones, disponibilidad, pacientes, turnos y consultas. |
 | Datos | PostgreSQL según el contrato del backend. El esquema físico no está en este repositorio. |
@@ -34,4 +34,4 @@ Según la distribución informada por el equipo, **Mauricio Pelozo** se encargó
 
 La revisión del frontend aprobó TypeScript, la compilación Node para Render y **18 pruebas** de dominio, cliente HTTP y gateway. La auditoría móvil de Lighthouse obtuvo **77 rendimiento, 100 accesibilidad, 81 buenas prácticas y 100 SEO** en una ejecución. La medición y sus oportunidades de mejora están en el [entregable 7](07-evidencias-seo-calidad.md). El [análisis funcional](01-analisis-funcional.md) define el alcance y los criterios del flujo.
 
-La inspección directa de PostgreSQL, una prueba en teléfono físico y el despliegue en Render quedan fuera de esta evidencia. El repositorio GitHub es privado; quien evalúe el código necesita acceso.
+La inspección directa de PostgreSQL, una prueba en teléfono físico y el despliegue en Render quedan fuera de esta evidencia. El [DER lógico de la API](03-modelo-datos-api.md) distingue lo comprobado por contrato de ese esquema físico pendiente. Los [wireframes y capturas](02-wireframes-prototipo.md) documentan la interfaz publicada. El repositorio GitHub es privado; quien evalúe el código necesita acceso.
