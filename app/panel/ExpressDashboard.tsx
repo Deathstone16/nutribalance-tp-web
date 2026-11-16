@@ -413,10 +413,10 @@ export default function ExpressDashboard() {
               {appointment.status === 'confirmed' && appointment.patientId && (
                 <button
                   className="btn"
-                  disabled={new Date(appointment.startsAt) > new Date()}
+                  disabled={api.localDate(new Date(appointment.startsAt)) > today}
                   title={
-                    new Date(appointment.startsAt) > new Date()
-                      ? 'Disponible cuando comience el turno'
+                    api.localDate(new Date(appointment.startsAt)) > today
+                      ? 'Disponible a partir del día del turno'
                       : undefined
                   }
                   onClick={() => void registerFromAppointment(appointment)}
