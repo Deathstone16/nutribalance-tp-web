@@ -1,11 +1,23 @@
-export default function Wordmark() {
+import Link from 'next/link';
+
+export default function Wordmark({
+  showProfessionalName = true,
+}: {
+  showProfessionalName?: boolean;
+}) {
   return (
-    <a className="wordmark" href="/" aria-label="NutriBalance, Mauricio Pelozo, inicio">
+    <Link
+      className="wordmark"
+      href="/"
+      aria-label={
+        showProfessionalName ? 'NutriBalance, Mauricio Pelozo, inicio' : 'NutriBalance, inicio'
+      }
+    >
       <span>
         nutri<em>balance</em>
         <span className="wordmark-point">.</span>
       </span>
-      <small>Mauricio Pelozo</small>
-    </a>
+      {showProfessionalName && <small>Mauricio Pelozo</small>}
+    </Link>
   );
 }

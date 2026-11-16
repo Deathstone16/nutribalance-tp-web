@@ -4,12 +4,12 @@ import PublicHeader from '@/components/public/Header';
 import HomeFooter from '@/components/public/HomeFooter';
 
 export const metadata: Metadata = {
-  title: 'Mauricio Pelozo · NutriBalance | Atención nutricional',
+  title: 'NutriBalance | Atención nutricional',
   description:
-    'Hablá con Mauricio Pelozo sobre tus hábitos y tu rutina. Elegí un horario para solicitar una consulta nutricional de 30 minutos.',
+    'Una consulta nutricional de 30 minutos para hablar sobre tus hábitos y tu rutina. Elegí un horario para enviar una solicitud.',
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'Mauricio Pelozo · NutriBalance',
+    title: 'NutriBalance · Atención nutricional',
     description: 'Hablemos de cómo comés hoy.',
     url: '/',
   },
@@ -22,7 +22,7 @@ const steps = [
   },
   {
     title: 'Esperá la confirmación',
-    description: 'Recibís un código de solicitud. Mauricio revisa el horario antes de confirmarlo.',
+    description: 'Recibís un código de solicitud. El horario queda pendiente de confirmación.',
   },
   {
     title: 'Continuá en cada consulta',
@@ -50,11 +50,6 @@ export default function Home() {
               Una consulta de 30 minutos para revisar tus hábitos, entender tus horarios y organizar
               los próximos pasos.
             </p>
-            <div className="hero-actions">
-              <a className="home-request-cta" href="/solicitar-turno">
-                Solicitar turno
-              </a>
-            </div>
           </div>
           <div className="hero-media">
             <figure className="hero-image">
@@ -86,8 +81,8 @@ export default function Home() {
               <span>al seguimiento.</span>
             </h2>
             <p>
-              Enviar el formulario registra una solicitud pendiente. Mauricio revisa el horario y
-              confirma el turno antes del encuentro.
+              Enviar el formulario registra una solicitud pendiente. El turno se confirma después de
+              revisar el horario.
             </p>
           </div>
           <ol className="booking-steps">
@@ -100,12 +95,6 @@ export default function Home() {
               </li>
             ))}
           </ol>
-          <a
-            className="home-request-cta home-request-cta--light booking-cta"
-            href="/solicitar-turno"
-          >
-            Solicitar turno
-          </a>
         </section>
 
         <section id="preguntas-frecuentes" className="public-faq" aria-labelledby="faq-title">
@@ -113,11 +102,6 @@ export default function Home() {
             <span className="faq-script">Antes de empezar</span>
             <h2 id="faq-title">Preguntas frecuentes</h2>
             <p>Lo esencial sobre la solicitud y la consulta, explicado con claridad.</p>
-          </div>
-          <div className="faq-topics" aria-hidden="true">
-            <span>La consulta</span>
-            <span>La confirmación</span>
-            <span>El seguimiento</span>
           </div>
           <div className="faq-grid">
             <article id="faq-duracion" className="faq-card">
@@ -128,7 +112,6 @@ export default function Home() {
                 Cada consulta dura 30 minutos. Los horarios disponibles se muestran al elegir una
                 fecha.
               </p>
-              <span className="faq-card-foot">30 minutos</span>
             </article>
             <article id="faq-confirmacion" className="faq-card">
               <div className="faq-card-top">
@@ -136,9 +119,8 @@ export default function Home() {
               </div>
               <p>
                 No. Al enviar el formulario recibís un código de solicitud y el turno queda
-                pendiente. Mauricio revisa el pedido antes de confirmarlo.
+                pendiente. Se revisa el pedido antes de confirmar el turno.
               </p>
-              <span className="faq-card-foot">Primero, solicitud pendiente</span>
             </article>
             <article id="faq-seguimiento" className="faq-card">
               <div className="faq-card-top">
@@ -148,7 +130,6 @@ export default function Home() {
                 En cada consulta se registran objetivos e indicaciones para retomarlos en el
                 siguiente encuentro.
               </p>
-              <span className="faq-card-foot">Próximo encuentro</span>
             </article>
           </div>
           <a className="home-request-cta faq-cta" href="/solicitar-turno">

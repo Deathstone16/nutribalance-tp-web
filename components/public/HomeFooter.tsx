@@ -18,8 +18,12 @@ export default function HomeFooter({
     <footer className="home-footer">
       <div className="home-footer-grid">
         <div className="home-footer-brand">
-          <Wordmark />
-          <p>Consultas nutricionales de 30 minutos con Mauricio Pelozo.</p>
+          <Wordmark showProfessionalName={!onHomePage} />
+          <p>
+            {onHomePage
+              ? 'Consultas nutricionales de 30 minutos.'
+              : 'Consultas nutricionales de 30 minutos con Mauricio Pelozo.'}
+          </p>
         </div>
         <nav aria-label="Conocer NutriBalance">
           <h2>Conocé</h2>

@@ -19,7 +19,7 @@ export default function PublicHeader({
         Saltar al contenido principal
       </a>
       <header className="public-header">
-        <Wordmark />
+        <Wordmark showProfessionalName={!home} />
         <nav className="desktop-nav" aria-label="Navegación principal">
           {links.map((link) =>
             home ? (
