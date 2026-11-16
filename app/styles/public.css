@@ -454,57 +454,84 @@
 @media (max-width: 800px) {
   .public-header {
     padding: 20px 24px;
+    flex-wrap: wrap;
+    gap: 0;
   }
   .public-header .desktop-nav {
     display: none;
   }
   .mobile-nav {
     display: block;
+    width: 100%;
     z-index: 5;
   }
   .mobile-nav summary {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    width: 48px;
     min-height: 44px;
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    justify-content: center;
+    padding: 0;
     border: 1px solid var(--color-line);
-    border-radius: 22px;
+    border-radius: 12px;
     color: var(--color-forest);
-    font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
     list-style: none;
+  }
+  .mobile-nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .mobile-nav-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .mobile-nav-bars span {
+    width: 24px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
   }
   .mobile-nav summary::-webkit-details-marker {
     display: none;
   }
+  .mobile-nav summary::marker {
+    content: '';
+  }
   .mobile-nav[open] summary {
     border-color: var(--color-forest);
+    background: var(--color-sage);
   }
   .mobile-nav nav {
-    position: absolute;
-    top: calc(100% - 1px);
-    right: 24px;
-    z-index: 5;
+    position: static;
     display: grid;
     gap: 4px;
-    width: min(300px, calc(100vw - 48px));
-    padding: 16px;
-    border: 1px solid var(--color-line);
-    background: var(--color-paper);
-    box-shadow: 0 16px 30px #173f351c;
+    width: 100%;
+    margin-top: 18px;
+    padding: 16px 0 4px;
+    border-top: 1px solid var(--color-line);
+    background: transparent;
   }
   .mobile-nav nav a:not(.btn) {
     display: flex;
     align-items: center;
-    min-height: 42px;
-    padding: 5px 8px;
+    min-height: 48px;
+    padding: 8px 4px;
     color: var(--color-ink);
     font-size: 14px;
     text-decoration: none;
   }
   .mobile-nav nav .btn {
-    margin-top: 6px;
+    justify-self: start;
+    margin-top: 10px;
   }
   .public-footer {
     padding: 38px 24px 24px;

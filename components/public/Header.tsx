@@ -9,9 +9,11 @@ const links = [
 export default function PublicHeader({
   home = false,
   showRequestLink = true,
+  showProfessionalName = !home,
 }: {
   home?: boolean;
   showRequestLink?: boolean;
+  showProfessionalName?: boolean;
 }) {
   return (
     <>
@@ -19,7 +21,7 @@ export default function PublicHeader({
         Saltar al contenido principal
       </a>
       <header className="public-header">
-        <Wordmark showProfessionalName={!home} />
+        <Wordmark showProfessionalName={showProfessionalName} />
         <nav className="desktop-nav" aria-label="Navegación principal">
           {links.map((link) =>
             home ? (
@@ -39,7 +41,14 @@ export default function PublicHeader({
           )}
         </nav>
         <details className="mobile-nav">
-          <summary>Menú</summary>
+          <summary>
+            <span className="mobile-nav-label">Menú de navegación</span>
+            <span className="mobile-nav-bars" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </summary>
           <nav aria-label="Navegación móvil">
             {links.map((link) =>
               home ? (

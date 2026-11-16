@@ -4,9 +4,11 @@ import SmoothAnchor from './SmoothAnchor';
 export default function HomeFooter({
   onHomePage = true,
   currentPage,
+  showProfessionalName = !onHomePage,
 }: {
   onHomePage?: boolean;
   currentPage?: 'request' | 'login';
+  showProfessionalName?: boolean;
 }) {
   const sectionLink = (id: string, label: string) =>
     onHomePage ? (
@@ -18,11 +20,11 @@ export default function HomeFooter({
     <footer className="home-footer">
       <div className="home-footer-grid">
         <div className="home-footer-brand">
-          <Wordmark showProfessionalName={!onHomePage} />
+          <Wordmark showProfessionalName={showProfessionalName} />
           <p>
-            {onHomePage
-              ? 'Consultas nutricionales de 30 minutos.'
-              : 'Consultas nutricionales de 30 minutos con Mauricio Pelozo.'}
+            {showProfessionalName
+              ? 'Consultas nutricionales de 30 minutos con Mauricio Pelozo.'
+              : 'Consultas nutricionales de 30 minutos.'}
           </p>
         </div>
         <nav aria-label="Conocer NutriBalance">

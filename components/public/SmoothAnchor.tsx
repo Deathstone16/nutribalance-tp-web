@@ -17,12 +17,18 @@ export default function SmoothAnchor({
 
     event.preventDefault();
     window.history.pushState(null, '', href);
-    const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - 32);
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      window.scrollTo(0, top);
-    } else {
-      window.scrollTo({ top, behavior: 'smooth' });
-    }
+    const mobileMenu = event.currentTarget.closest('details.mobile-nav');
+    if (mobileMenu) mobileMenu.removeAttribute('open');
+    const scroll = () => {
+      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - 32);
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        window.scrollTo(0, top);
+      } else {
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    };
+    if (mobileMenu) window.requestAnimationFrame(scroll);
+    else scroll();
   }
 
   return (

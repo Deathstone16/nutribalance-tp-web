@@ -128,9 +128,7 @@ export default function RequestForm() {
           <br />
           ya está registrada.
         </h2>
-        <p>
-          Guardá este comprobante. Mauricio debe revisar y confirmar el turno antes del encuentro.
-        </p>
+        <p>Guardá este comprobante. El turno debe revisarse y confirmarse antes del encuentro.</p>
         <dl>
           <div>
             <dt>Código de solicitud</dt>

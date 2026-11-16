@@ -6,16 +6,16 @@ import HomeFooter from '@/components/public/HomeFooter';
 import RequestForm from '@/components/public/RequestForm';
 
 export const metadata: Metadata = {
-  title: 'Solicitar turno · Mauricio Pelozo | NutriBalance',
+  title: 'Solicitar turno | NutriBalance',
   description:
-    'Consultá los horarios disponibles y solicitá tu turno con Mauricio Pelozo. El encuentro queda pendiente de confirmación.',
+    'Consultá los horarios disponibles y enviá tu solicitud de turno. El encuentro queda pendiente de confirmación.',
   alternates: { canonical: '/solicitar-turno' },
 };
 
 export default function RequestPage() {
   return (
     <div className="public-page editorial-home editorial-request">
-      <PublicHeader showRequestLink={false} />
+      <PublicHeader showRequestLink={false} showProfessionalName={false} />
       <main className="request-main" id="contenido">
         <section className="request-intro" aria-labelledby="request-title">
           <Link href="/" className="back-link">
@@ -34,8 +34,8 @@ export default function RequestPage() {
             <div className="request-intro-aside">
               <span className="request-script">30 minutos</span>
               <p>
-                Elegí una fecha y un horario disponible. Mauricio revisa tu solicitud y confirma el
-                turno antes del encuentro.
+                Elegí una fecha y un horario disponible. La solicitud queda pendiente hasta que se
+                revise y confirme el turno.
               </p>
               <ul>
                 <li>
@@ -56,7 +56,7 @@ export default function RequestPage() {
         </section>
         <RequestForm />
       </main>
-      <HomeFooter onHomePage={false} currentPage="request" />
+      <HomeFooter onHomePage={false} currentPage="request" showProfessionalName={false} />
     </div>
   );
 }
