@@ -1,10 +1,17 @@
 'use client';
 
-import type {MouseEvent, ReactNode} from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
-export default function SmoothAnchor({href,children}:{href:`#${string}`,children:ReactNode}) {
-  function handleClick(event:MouseEvent<HTMLAnchorElement>) {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+export default function SmoothAnchor({
+  href,
+  children,
+}: {
+  href: `#${string}`;
+  children: ReactNode;
+}) {
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+      return;
     const target = document.getElementById(decodeURIComponent(href.slice(1)));
     if (!target) return;
 
@@ -14,9 +21,13 @@ export default function SmoothAnchor({href,children}:{href:`#${string}`,children
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       window.scrollTo(0, top);
     } else {
-      window.scrollTo({top, behavior:'smooth'});
+      window.scrollTo({ top, behavior: 'smooth' });
     }
   }
 
-  return <a href={href} onClick={handleClick}>{children}</a>;
+  return (
+    <a href={href} onClick={handleClick}>
+      {children}
+    </a>
+  );
 }

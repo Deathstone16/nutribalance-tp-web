@@ -58,6 +58,10 @@ Reemplazar la URL por la publicación real. `check:public` realiza ocho controle
 
 La prueba optativa `tests/express-live-flow.mjs --production` permite elegir el frontend con `TEST_SITE_ORIGIN`. Recibe credenciales JSON por stdin, con entrada oculta en terminal. Su modo normal crea una ficha y consulta ficticias y cancela su turno; `--read-only` requiere el ID de una ficha ficticia con historial y no crea registros. Consultar la guía antes de ejecutarla. No poner credenciales en argumentos, archivos, Git ni capturas.
 
+## Formato del código
+
+Para mantener el formato del código, ejecutá `corepack pnpm format`. Para comprobarlo sin modificar archivos, usá `corepack pnpm format:check`.
+
 ## Rutas
 
 | Ruta | Uso |

@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.vinext/
+dist/
+coverage/
+.wrangler/
+work/
+outputs/
+next-env.d.ts
+pnpm-lock.yaml
