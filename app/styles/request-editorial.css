@@ -321,22 +321,6 @@
   color: #e5eddb;
 }
 
-.editorial-request .request-form .request-consent {
-  grid-column: 1 / -1;
-  margin: 5px 9px 0;
-  padding: 16px 18px;
-  border: 1px solid #b0c39e;
-  border-radius: 10px;
-  background: #fffdf3;
-  color: var(--home-forest);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.editorial-request .request-form .request-consent input {
-  accent-color: var(--home-forest);
-}
-
 .editorial-request .request-form .request-submit {
   grid-column: 1 / -1;
   min-height: 62px;
@@ -498,9 +482,6 @@
   }
   .editorial-request .request-form .form-grid {
     grid-template-columns: 1fr;
-  }
-  .editorial-request .request-form .request-consent {
-    margin-inline: 0;
   }
   .editorial-request .request-success {
     padding: 31px 24px;

@@ -168,9 +168,7 @@ export default function RequestForm() {
           [field.name]: field.validity.valueMissing
             ? field.name === 'startsAt'
               ? 'Elegí un horario disponible.'
-              : field.type === 'checkbox'
-                ? 'Confirmá el uso de datos ficticios.'
-                : 'Completá este campo.'
+              : 'Completá este campo.'
             : 'Revisá el valor ingresado.',
         }));
       }}
@@ -321,16 +319,6 @@ export default function RequestForm() {
           <p>Tu solicitud queda pendiente de confirmación.</p>
         </div>
       )}
-      <label className="checkbox request-consent">
-        <input
-          disabled={busy}
-          name="fictional"
-          type="checkbox"
-          required
-          {...errorProps('fictional')}
-        />
-        <span>Confirmo que los datos ingresados son ficticios. *{fieldError('fictional')}</span>
-      </label>
       {error && (
         <div ref={errorRef} tabIndex={-1} className="form-error" role="alert">
           {error}
