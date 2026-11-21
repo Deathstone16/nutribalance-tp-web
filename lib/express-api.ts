@@ -26,6 +26,9 @@ export type Appointment = {
   contactName: string;
   contactPhone: string;
   contactEmail: string | null;
+  contactDocumentNumber: string | null;
+  /** La persona abrió el enlace del correo; hasta entonces la profesional no puede confirmar. */
+  contactEmailConfirmed: boolean;
   startsAt: string;
   endsAt: string;
   status: AppointmentStatus;
@@ -58,10 +61,25 @@ export type Availability = { date: string; timeZone: string; slots: Slot[] };
 export type RequestInput = {
   contactName: string;
   contactPhone: string;
-  contactEmail: string | null;
+  contactEmail: string;
+  contactDocumentNumber: string;
   startsAt: string;
 };
-export type RequestReceipt = { id: string; startsAt: string; endsAt: string; status: 'pending' };
+export type RequestReceipt = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: 'pending';
+  emailConfirmationRequired: boolean;
+  confirmationExpiresAt: string | null;
+};
+export type EmailConfirmation = {
+  emailConfirmed: true;
+  alreadyConfirmed: boolean;
+  startsAt: string;
+  endsAt: string;
+  status: AppointmentStatus;
+};
 
 export class ExpressApiError extends Error {
   constructor(
@@ -209,6 +227,8 @@ export const availability = (date: string, signal?: AbortSignal) =>
   get<Availability>('/availability?' + query({ date }), signal);
 export const requestAppointment = (input: RequestInput) =>
   mutate<RequestReceipt>('/appointment-requests', 'POST', input);
+export const confirmEmail = (token: string) =>
+  mutate<EmailConfirmation>('/appointment-requests/confirm-email', 'POST', { token });
 export const listPatients = (q = '', page = 1, signal?: AbortSignal) =>
   get<Page<Patient>>('/patients?' + query({ q, page, pageSize: 20 }), signal);
 export const getPatient = (patientId: string) => get<Patient>('/patients/' + id(patientId));

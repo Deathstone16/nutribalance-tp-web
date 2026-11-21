@@ -5,7 +5,7 @@ const routes: [RegExp, string[]][] = [
   [/^\/auth\/(csrf|me)$/, ['GET']],
   [/^\/auth\/(login|logout)$/, ['POST']],
   [/^\/availability$/, ['GET']],
-  [/^\/appointment-requests$/, ['POST']],
+  [/^\/appointment-requests(\/confirm-email)?$/, ['POST']],
   [/^\/patients$/, ['GET', 'POST']],
   [new RegExp('^/patients/' + UUID + '$'), ['GET', 'PATCH']],
   [new RegExp('^/patients/' + UUID + '/consultations$'), ['GET', 'POST']],

@@ -1,5 +1,6 @@
 'use client';
 import {
+  Fragment,
   useCallback,
   useEffect,
   useId,
@@ -13,8 +14,10 @@ import {
   ArrowUpRight,
   CalendarDays,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
   FileText,
   Leaf,
   LayoutDashboard,
@@ -53,12 +56,51 @@ const statusBadge = (status: api.AppointmentStatus) => (
     {statusLabels[status]}
   </Badge>
 );
+/** Una solicitud pendiente solo puede confirmarse cuando la persona confirmó su correo. */
+const awaitingEmail = (appointment: api.Appointment) =>
+  appointment.status === 'pending' && !appointment.contactEmailConfirmed;
+const appointmentBadge = (appointment: api.Appointment) =>
+  awaitingEmail(appointment) ? (
+    <Badge tone="neutral">Correo sin confirmar</Badge>
+  ) : (
+    statusBadge(appointment.status)
+  );
 const emptyPage = <T,>(): api.Page<T> => ({
   data: [],
   meta: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
 });
 const message = (e: unknown) =>
   e instanceof Error ? e.message : 'No pudimos completar la acción.';
+const contactLine = (appointment: api.Appointment) =>
+  [
+    appointment.contactDocumentNumber && 'DNI ' + appointment.contactDocumentNumber,
+    appointment.contactPhone,
+    appointment.contactEmail,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+const patientMatch = (appointment: api.Appointment) =>
+  appointment.status === 'pending' ? (
+    <span className={appointment.patientId ? 'patient-match known' : 'patient-match'}>
+      {appointment.patientId ? 'Paciente existente' : 'Sin ficha'}
+    </span>
+  ) : null;
+/** Datos de una solicitud para precargar una ficha nueva. */
+function patientFromAppointment(appointment: api.Appointment): Partial<api.Patient> {
+  const [firstName = '', ...rest] = appointment.contactName.trim().split(/\s+/);
+  return {
+    firstName,
+    lastName: rest.join(' '),
+    phone: appointment.contactPhone,
+    email: appointment.contactEmail,
+    documentNumber: appointment.contactDocumentNumber,
+  };
+}
+function ageFrom(birthDate: string, today: string) {
+  const [by, bm, bd] = birthDate.split('-').map(Number),
+    [ty, tm, td] = today.split('-').map(Number);
+  return ty - by - (tm < bm || (tm === bm && td < bd) ? 1 : 0);
+}
 
 export default function ExpressDashboard() {
   const today = api.localDate();
@@ -90,6 +132,20 @@ export default function ExpressDashboard() {
     requestSequence = useRef(0),
     detailSequence = useRef(0);
   const refresh = () => setVersion((value) => value + 1);
+  // Tras cerrar un cuadro, si el control que lo abrió desapareció (la lista se recargó), el foco
+  // pasa al contenido principal para que quien usa teclado no pierda su lugar.
+  const restoreFocusUntil = useRef(0);
+  useEffect(() => {
+    if (loading || modal || Date.now() > restoreFocusUntil.current) return;
+    const active = document.activeElement;
+    if (!active || active === document.body || !active.isConnected)
+      document.getElementById('panel-contenido')?.focus();
+  }, [loading, modal]);
+  const [openVisits, setOpenVisits] = useState<string[]>([]);
+  const toggleVisit = (id: string) =>
+    setOpenVisits((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
+    );
 
   const checkSession = useCallback(async () => {
     setChecking(true);
@@ -187,6 +243,20 @@ export default function ExpressDashboard() {
     setScreen(next);
     setMobile(false);
     setLoadError('');
+  }
+  function openTodayAgenda() {
+    setFrom(today);
+    setTo(today);
+    setStatus('');
+    setAppointmentPage(1);
+    navigate('Agenda');
+  }
+  function openPendingAgenda() {
+    setFrom(today);
+    setTo(api.addDays(today, 30));
+    setStatus('pending');
+    setAppointmentPage(1);
+    navigate('Agenda');
   }
   async function openPatient(patientId: string) {
     const sequence = ++detailSequence.current;
@@ -371,29 +441,40 @@ export default function ExpressDashboard() {
         : screen === 'Configuración'
           ? 'Tu consultorio'
           : screen;
+  const patientBase =
+    modal?.kind === 'patient'
+      ? (modal.patient ??
+        (modal.appointment ? patientFromAppointment(modal.appointment) : undefined))
+      : undefined;
   const empty = (text: string) => (
     <div className="empty">
       <FileText size={28} />
       <p>{text}</p>
     </div>
   );
-  const appointmentList = (list: api.Appointment[]) =>
+  const appointmentList = (list: api.Appointment[], showDate = true) =>
     list.length ? (
       <div className="express-appointments">
         {list.map((appointment) => (
           <article className="appointment-row" key={appointment.id}>
             <div className="time">
               <strong>{api.localTime(appointment.startsAt)}</strong>
-              <small>{api.dateText(api.localDate(new Date(appointment.startsAt)))}</small>
+              {showDate && (
+                <small>{api.dateText(api.localDate(new Date(appointment.startsAt)))}</small>
+              )}
             </div>
-            <Avatar name={appointment.contactName} />
             <div className="grow">
               <strong>{appointment.contactName}</strong>
-              <small>{appointment.contactPhone}</small>
-              {appointment.contactEmail && <small>{appointment.contactEmail}</small>}
+              <small>{contactLine(appointment)}</small>
+              {patientMatch(appointment)}
             </div>
-            {statusBadge(appointment.status)}
+            {appointmentBadge(appointment)}
             <div className="express-row-actions">
+              {awaitingEmail(appointment) && (
+                <small className="express-awaiting">
+                  Esperando que la persona confirme su correo.
+                </small>
+              )}
               {appointment.patientId && (
                 <button
                   className="textbutton"
@@ -402,7 +483,7 @@ export default function ExpressDashboard() {
                   Abrir ficha <ArrowUpRight size={16} />
                 </button>
               )}
-              {appointment.status === 'pending' && (
+              {appointment.status === 'pending' && appointment.contactEmailConfirmed && (
                 <button
                   className="btn secondary"
                   onClick={() => openModal({ kind: 'confirm', appointment })}
@@ -516,7 +597,7 @@ export default function ExpressDashboard() {
             <Avatar name="Mauricio Pelozo" />
           </div>
         </header>
-        <main id="panel-contenido">
+        <main id="panel-contenido" tabIndex={-1}>
           <div className="page-heading">
             <div>
               <h1>{title}</h1>
@@ -571,149 +652,108 @@ export default function ExpressDashboard() {
           )}
           {!loading && !loadError && screen === 'Resumen' && summary && (
             <>
-              <section className="day-hero">
-                <div className="day-hero-main">
-                  <span className="hero-kicker">TU DÍA, CON CLARIDAD</span>
-                  <h2>Más tiempo para acompañar.</h2>
-                  <p>Prepará cada encuentro con la ficha y el historial a mano.</p>
-                  <button
-                    className="btn on-dark primary"
-                    onClick={() => {
-                      setFrom(today);
-                      setTo(today);
-                      setAppointmentPage(1);
-                      setStatus('');
-                      navigate('Agenda');
-                    }}
-                  >
-                    Ver agenda de hoy <ArrowUpRight size={17} />
-                  </button>
-                </div>
-                <div className="day-hero-side">
-                  <button
-                    onClick={() => {
-                      setFrom(today);
-                      setTo(api.addDays(today, 30));
-                      setStatus('pending');
-                      setAppointmentPage(1);
-                      navigate('Agenda');
-                    }}
-                  >
-                    <CalendarDays size={20} />
-                    <span>
-                      <strong>{summary.pending.meta.total} solicitudes pendientes</strong>
-                      <small>En los próximos 31 días</small>
-                    </span>
-                    <ChevronRight size={18} />
-                  </button>
-                  <button onClick={() => navigate('Pacientes')}>
-                    <Users size={20} />
-                    <span>
-                      <strong>{summary.patients.meta.total} pacientes</strong>
-                      <small>Fichas e historial de consultas</small>
-                    </span>
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-              </section>
-              <div className="overview-strip">
-                <span>
-                  <CalendarDays size={18} />
-                  <strong>{summary.today.meta.total}</strong> turnos hoy
-                </span>
-                <span>
-                  <Users size={18} />
-                  <strong>{summary.patients.meta.total}</strong> fichas de pacientes
-                </span>
+              <div className="express-stats">
+                <button className="express-stat" onClick={openTodayAgenda}>
+                  <CalendarDays size={20} />
+                  <span>
+                    <strong>{summary.today.meta.total}</strong>
+                    <small>Turnos hoy</small>
+                  </span>
+                </button>
+                <button className="express-stat" onClick={openPendingAgenda}>
+                  <Clock size={20} />
+                  <span>
+                    <strong>{summary.pending.meta.total}</strong>
+                    <small>Solicitudes por confirmar</small>
+                  </span>
+                </button>
+                <button className="express-stat" onClick={() => navigate('Pacientes')}>
+                  <Users size={20} />
+                  <span>
+                    <strong>{summary.patients.meta.total}</strong>
+                    <small>Pacientes registrados</small>
+                  </span>
+                </button>
               </div>
-              <div className="dashboard-grid premium-grid">
+              <div className="express-summary-grid">
                 <section className="card appointments-card">
                   <div className="section-head">
                     <div>
                       <h3>Agenda de hoy</h3>
-                      <p>El orden de los próximos encuentros.</p>
+                      <p>{api.dateText(today)}</p>
                     </div>
-                    <button
-                      className="textbutton"
-                      onClick={() => {
-                        setFrom(today);
-                        setTo(today);
-                        setStatus('');
-                        setAppointmentPage(1);
-                        navigate('Agenda');
-                      }}
-                    >
+                    <button className="textbutton" onClick={openTodayAgenda}>
                       Ver agenda <ArrowUpRight size={17} />
                     </button>
                   </div>
-                  {appointmentList(summary.today.data)}
+                  {appointmentList(summary.today.data, false)}
                 </section>
-                <section className="card quick-card">
-                  <h3>Tu espacio de trabajo</h3>
-                  <p>Las acciones de cada consulta.</p>
-                  <button className="quick-action" onClick={() => navigate('Pacientes')}>
-                    <span>
-                      <Search size={20} />
-                    </span>
-                    <div>
-                      <strong>Buscar un paciente</strong>
-                      <small>Abrir su ficha e historial</small>
-                    </div>
-                    <ChevronRight size={18} />
-                  </button>
-                  <button className="quick-action" onClick={() => openModal({ kind: 'patient' })}>
-                    <span>
-                      <Plus size={20} />
-                    </span>
-                    <div>
-                      <strong>Crear una ficha</strong>
-                      <small>Comenzar un nuevo seguimiento</small>
-                    </div>
-                    <ChevronRight size={18} />
-                  </button>
-                </section>
-                <section className="card">
-                  <div className="section-head">
-                    <h3>Pacientes a mano</h3>
-                    <button className="textbutton" onClick={() => navigate('Pacientes')}>
-                      Ver todos
-                    </button>
-                  </div>
-                  {summary.patients.data.length
-                    ? summary.patients.data.slice(0, 3).map((value) => (
-                        <button
-                          className="recent-patient"
-                          key={value.id}
-                          onClick={() => void openPatient(value.id)}
-                        >
-                          <Avatar name={api.fullName(value)} />
-                          <div className="grow">
-                            <strong>{api.fullName(value)}</strong>
-                            <small>{value.phone}</small>
-                          </div>
-                          <ArrowUpRight size={16} />
+                <div className="express-summary-side">
+                  <section className="card">
+                    <div className="section-head">
+                      <div>
+                        <h3>Solicitudes por confirmar</h3>
+                        <p>Próximos 31 días.</p>
+                      </div>
+                      {summary.pending.meta.total > 0 && (
+                        <button className="textbutton" onClick={openPendingAgenda}>
+                          Ver todas
                         </button>
-                      ))
-                    : empty('Registrá la primera ficha para comenzar el seguimiento.')}
-                </section>
-                <section className="card attention-card">
-                  <h3>Antes de encontrarse</h3>
-                  <p>Una revisión breve para darle continuidad a cada consulta.</p>
-                  <div className="attention-list">
-                    <span>
-                      <Check size={16} />
-                      Motivo del encuentro anterior
-                    </span>
-                    <span>
-                      <Check size={16} />
-                      Objetivos acordados
-                    </span>
-                    <span>
-                      <Check size={16} />
-                      Indicaciones de seguimiento
-                    </span>
-                  </div>
-                </section>
+                      )}
+                    </div>
+                    {summary.pending.data.length
+                      ? summary.pending.data.slice(0, 4).map((appointment) => (
+                          <div className="express-pending" key={appointment.id}>
+                            <div className="grow">
+                              <strong>{appointment.contactName}</strong>
+                              <small>
+                                {api.dateText(api.localDate(new Date(appointment.startsAt)))} ·{' '}
+                                {api.localTime(appointment.startsAt)}
+                              </small>
+                              {patientMatch(appointment)}
+                            </div>
+                            {appointment.contactEmailConfirmed ? (
+                              <button
+                                className="btn secondary"
+                                onClick={() => openModal({ kind: 'confirm', appointment })}
+                              >
+                                Confirmar
+                              </button>
+                            ) : (
+                              <Badge tone="neutral">Correo sin confirmar</Badge>
+                            )}
+                          </div>
+                        ))
+                      : empty('No hay solicitudes pendientes.')}
+                  </section>
+                  <section className="card">
+                    <div className="section-head">
+                      <h3>Pacientes</h3>
+                      <button className="textbutton" onClick={() => navigate('Pacientes')}>
+                        <Search size={16} />
+                        Buscar
+                      </button>
+                    </div>
+                    {summary.patients.data.length
+                      ? summary.patients.data.slice(0, 3).map((value) => (
+                          <button
+                            className="recent-patient"
+                            key={value.id}
+                            onClick={() => void openPatient(value.id)}
+                          >
+                            <div className="grow">
+                              <strong>{api.fullName(value)}</strong>
+                              <small>
+                                {value.documentNumber ? 'DNI ' + value.documentNumber : 'Sin DNI'}{' '}
+                                · {value.phone}
+                              </small>
+                            </div>
+                            <ArrowUpRight size={16} />
+                          </button>
+                        ))
+                      : empty('Registrá la primera ficha para comenzar el seguimiento.')}
+                  </section>
+                </div>
               </div>
             </>
           )}
@@ -750,10 +790,7 @@ export default function ExpressDashboard() {
                         {patients.data.map((value) => (
                           <tr key={value.id}>
                             <td>
-                              <div className="person-cell">
-                                <Avatar name={api.fullName(value)} />
-                                <strong>{api.fullName(value)}</strong>
-                              </div>
+                              <strong>{api.fullName(value)}</strong>
                             </td>
                             <td>{value.documentNumber || 'Sin registrar'}</td>
                             <td>
@@ -847,21 +884,29 @@ export default function ExpressDashboard() {
                 <ArrowLeft size={16} />
                 Volver a pacientes
               </button>
-              <section className="patient-banner">
-                <Avatar name={api.fullName(patient)} size="large" />
-                <div className="grow">
-                  <h2>{api.fullName(patient)}</h2>
-                  <p>
-                    {patient.documentNumber
-                      ? 'DNI ' + patient.documentNumber
-                      : 'Documento sin registrar'}
-                    {patient.birthDate ? ' · Nació el ' + api.dateText(patient.birthDate) : ''}
-                  </p>
-                  <small>
-                    {patient.phone}
-                    {patient.email ? ' · ' + patient.email : ''}
-                  </small>
-                </div>
+              <section className="patient-banner express-patient-header">
+                <dl className="express-patient-facts">
+                  <div>
+                    <dt>DNI</dt>
+                    <dd>{patient.documentNumber || 'Sin registrar'}</dd>
+                  </div>
+                  <div>
+                    <dt>Edad</dt>
+                    <dd>
+                      {patient.birthDate
+                        ? ageFrom(patient.birthDate, today) + ' años'
+                        : 'Sin registrar'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Teléfono</dt>
+                    <dd>{patient.phone}</dd>
+                  </div>
+                  <div>
+                    <dt>Correo</dt>
+                    <dd>{patient.email || 'Sin registrar'}</dd>
+                  </div>
+                </dl>
                 <button
                   className="btn secondary"
                   onClick={() => openModal({ kind: 'patient', patient })}
@@ -869,68 +914,97 @@ export default function ExpressDashboard() {
                   Editar paciente
                 </button>
               </section>
-              <div className="two-col">
-                <section className="card">
-                  <span className="overline">HISTORIA CLÍNICA</span>
-                  <h3>Lo que conviene tener presente</h3>
+              <div className="express-record">
+                <section className="card express-clinical">
+                  <h3>Datos clínicos</h3>
                   <ClinicalText title="Antecedentes" text={patient.background} />
                   <ClinicalText title="Alergias" text={patient.allergies} />
                   <ClinicalText title="Medicación" text={patient.medication} />
                 </section>
-                <section className="card objective-card">
-                  <span className="overline">SEGUIMIENTO</span>
-                  <h3>El próximo paso</h3>
-                  <p>Revisá los encuentros anteriores y registrá lo conversado en la consulta.</p>
-                  <button
-                    className="btn secondary"
-                    onClick={() => openModal({ kind: 'consultation' })}
-                  >
-                    Registrar consulta <Plus size={17} />
-                  </button>
+                <section className="card express-history">
+                  <div className="section-head">
+                    <div>
+                      <h3>Historial de consultas</h3>
+                      <p>La más reciente primero.</p>
+                    </div>
+                    <Badge tone="neutral">{history.meta.total} consultas</Badge>
+                  </div>
+                  {!loading && !loadError && (
+                    <>
+                      {history.data.length ? (
+                        <div className="table-wrap">
+                          <table className="express-history-table">
+                            <thead>
+                              <tr>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Motivo</th>
+                                <th scope="col">Peso</th>
+                                <th scope="col">Talla</th>
+                                <th scope="col">Cintura</th>
+                                <th scope="col">
+                                  <span className="sr-only">Detalle</span>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {history.data.map((visit) => {
+                                const open = openVisits.includes(visit.id);
+                                const measure = (value: number | null, unit: string) =>
+                                  value === null ? '—' : `${value} ${unit}`;
+                                return (
+                                  <Fragment key={visit.id}>
+                                    <tr className={open ? 'express-visit-row is-open' : 'express-visit-row'}>
+                                      <td className="express-visit-date">
+                                        {api.dateText(visit.date)}
+                                      </td>
+                                      <td className="express-visit-reason">{visit.reason}</td>
+                                      <td>{measure(visit.weightKg, 'kg')}</td>
+                                      <td>{measure(visit.heightCm, 'cm')}</td>
+                                      <td>{measure(visit.waistCm, 'cm')}</td>
+                                      <td className="express-visit-toggle">
+                                        <button
+                                          type="button"
+                                          className="textbutton"
+                                          aria-expanded={open}
+                                          aria-controls={`visit-${visit.id}`}
+                                          onClick={() => toggleVisit(visit.id)}
+                                        >
+                                          {open ? 'Ocultar' : 'Ver detalle'}
+                                          <ChevronDown size={16} className="express-chevron" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                    {open && (
+                                      <tr className="express-visit-detail" id={`visit-${visit.id}`}>
+                                        <td colSpan={6}>
+                                          <div className="express-visit-detail-grid">
+                                            <ClinicalText
+                                              title="Observaciones"
+                                              text={visit.observations}
+                                            />
+                                            <ClinicalText title="Objetivos" text={visit.objective} />
+                                            <ClinicalText
+                                              title="Indicaciones"
+                                              text={visit.instructions}
+                                            />
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        empty('La primera consulta va a aparecer acá cuando la registres.')
+                      )}
+                      <Pagination meta={history.meta} onChange={setHistoryPage} />
+                    </>
+                  )}
                 </section>
               </div>
-              <section className="card express-history">
-                <div className="section-head">
-                  <div>
-                    <h3>Historial de consultas</h3>
-                    <p>El recorrido, encuentro a encuentro.</p>
-                  </div>
-                  <Badge tone="neutral">{history.meta.total} consultas</Badge>
-                </div>
-                {!loading && !loadError && (
-                  <>
-                    {history.data.length
-                      ? history.data.map((visit) => (
-                          <article className="express-visit" key={visit.id}>
-                            <span className="overline">{api.dateText(visit.date)}</span>
-                            <h3>{visit.reason}</h3>
-                            <div className="express-measurements">
-                              {visit.weightKg !== null && (
-                                <span>
-                                  Peso <strong>{visit.weightKg} kg</strong>
-                                </span>
-                              )}
-                              {visit.heightCm !== null && (
-                                <span>
-                                  Talla <strong>{visit.heightCm} cm</strong>
-                                </span>
-                              )}
-                              {visit.waistCm !== null && (
-                                <span>
-                                  Cintura <strong>{visit.waistCm} cm</strong>
-                                </span>
-                              )}
-                            </div>
-                            <ClinicalText title="Observaciones" text={visit.observations} />
-                            <ClinicalText title="Objetivos" text={visit.objective} />
-                            <ClinicalText title="Indicaciones" text={visit.instructions} />
-                          </article>
-                        ))
-                      : empty('La primera consulta va a aparecer acá cuando la registres.')}
-                    <Pagination meta={history.meta} onChange={setHistoryPage} />
-                  </>
-                )}
-              </section>
             </>
           )}
           {screen === 'Configuración' && (
@@ -968,15 +1042,23 @@ export default function ExpressDashboard() {
           }
           busy={saving}
           onClose={() => setModal(null)}
+          onClosed={() => {
+            restoreFocusUntil.current = Date.now() + 8000;
+          }}
         >
           {modal.kind === 'patient' && (
             <form onSubmit={savePatient}>
+              {!modal.patient && modal.appointment && (
+                <p className="notice">
+                  Completamos la ficha con los datos de la solicitud. Revisalos antes de guardar.
+                </p>
+              )}
               <fieldset disabled={saving}>
                 <div className="form-grid">
                   <Field
                     label="Nombre *"
                     name="firstName"
-                    value={modal.patient?.firstName}
+                    value={patientBase?.firstName}
                     maxLength={80}
                     required
                     error={formError}
@@ -984,7 +1066,7 @@ export default function ExpressDashboard() {
                   <Field
                     label="Apellido *"
                     name="lastName"
-                    value={modal.patient?.lastName}
+                    value={patientBase?.lastName}
                     maxLength={80}
                     required
                     error={formError}
@@ -993,7 +1075,7 @@ export default function ExpressDashboard() {
                     label="Teléfono *"
                     name="phone"
                     type="tel"
-                    value={modal.patient?.phone}
+                    value={patientBase?.phone}
                     minLength={6}
                     maxLength={30}
                     required
@@ -1002,7 +1084,7 @@ export default function ExpressDashboard() {
                   <Field
                     label="DNI"
                     name="documentNumber"
-                    value={modal.patient?.documentNumber}
+                    value={patientBase?.documentNumber}
                     pattern="[0-9]{7,9}"
                     maxLength={9}
                     error={formError}
@@ -1012,7 +1094,7 @@ export default function ExpressDashboard() {
                     name="birthDate"
                     type="date"
                     max={today}
-                    value={modal.patient?.birthDate}
+                    value={patientBase?.birthDate}
                     error={formError}
                   />
                   <Field
@@ -1020,28 +1102,28 @@ export default function ExpressDashboard() {
                     name="email"
                     type="email"
                     maxLength={254}
-                    value={modal.patient?.email}
+                    value={patientBase?.email}
                     error={formError}
                   />
                 </div>
                 <TextField
                   label="Antecedentes"
                   name="background"
-                  value={modal.patient?.background}
+                  value={patientBase?.background}
                   maxLength={4000}
                   error={formError}
                 />
                 <TextField
                   label="Alergias"
                   name="allergies"
-                  value={modal.patient?.allergies}
+                  value={patientBase?.allergies}
                   maxLength={2000}
                   error={formError}
                 />
                 <TextField
                   label="Medicación"
                   name="medication"
-                  value={modal.patient?.medication}
+                  value={patientBase?.medication}
                   maxLength={2000}
                   error={formError}
                 />
@@ -1052,10 +1134,10 @@ export default function ExpressDashboard() {
           )}
           {modal.kind === 'consultation' && patient && (
             <form onSubmit={saveConsultation}>
-              <div className="person-cell">
-                <Avatar name={api.fullName(patient)} />
+              <p className="express-dialog-subject">
                 <strong>{api.fullName(patient)}</strong>
-              </div>
+                {patient.documentNumber && <span> · DNI {patient.documentNumber}</span>}
+              </p>
               {modal.appointment && (
                 <p>
                   Turno del {api.dateText(api.localDate(new Date(modal.appointment.startsAt)))} a
@@ -1237,19 +1319,29 @@ function Dialog({
   title,
   busy,
   onClose,
+  onClosed,
   children,
 }: {
   title: string;
   busy: boolean;
   onClose: () => void;
+  onClosed?: () => void;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null),
     id = useId();
   useEffect(() => {
     const dialog = ref.current;
+    // Al cerrar, el foco vuelve al control que abrió el cuadro. Si ese control desaparece al
+    // recargar la lista, el panel mueve el foco al contenido principal (ver onClosed).
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog?.showModal();
-    return () => dialog?.close();
+    return () => {
+      dialog?.close();
+      if (opener?.isConnected && opener !== document.body) opener.focus();
+      onClosed?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <dialog
@@ -1405,8 +1497,23 @@ function ConfirmAppointment({
     [page, setPage] = useState(1),
     [result, setResult] = useState(() => emptyPage<api.Patient>()),
     [selected, setSelected] = useState<api.Patient | null>(initialPatient ?? null),
+    [recognized, setRecognized] = useState<api.Patient | null>(null),
     [loading, setLoading] = useState(false),
     [loadError, setLoadError] = useState('');
+  // Solicitud reconocida por DNI o correo: la ficha llega elegida y alcanza con confirmar.
+  useEffect(() => {
+    if (initialPatient || !appointment.patientId) return;
+    const controller = new AbortController();
+    api
+      .getPatient(appointment.patientId)
+      .then((value) => {
+        if (controller.signal.aborted) return;
+        setRecognized(value);
+        setSelected((current) => current ?? value);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [appointment.patientId, initialPatient]);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -1437,9 +1544,16 @@ function ConfirmAppointment({
       }}
     >
       <p>
-        Solicitud de <strong>{appointment.contactName}</strong> · {appointment.contactPhone}
+        Solicitud de <strong>{appointment.contactName}</strong> · {contactLine(appointment)}
       </p>
-      <p>Elegí la ficha que corresponde a esta persona para confirmar el turno.</p>
+      {recognized ? (
+        <p className="notice">
+          Reconocimos a esta persona: coincide con la ficha de{' '}
+          <strong>{api.fullName(recognized)}</strong>. Si es correcto, confirmá el turno.
+        </p>
+      ) : (
+        <p>Elegí la ficha que corresponde a esta persona para confirmar el turno.</p>
+      )}
       <label>
         Buscar ficha
         <input
@@ -1470,7 +1584,6 @@ function ConfirmAppointment({
                 aria-pressed={selected?.id === patient.id}
                 onClick={() => setSelected(patient)}
               >
-                <Avatar name={api.fullName(patient)} />
                 <span>
                   <strong>{api.fullName(patient)}</strong>
                   <small>

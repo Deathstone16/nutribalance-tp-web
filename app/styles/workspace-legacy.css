@@ -27,14 +27,6 @@ button {
 button:hover {
   filter: brightness(0.97);
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid #8bc9b3;
-  outline-offset: 2px;
-}
 h1,
 h2,
 h3,

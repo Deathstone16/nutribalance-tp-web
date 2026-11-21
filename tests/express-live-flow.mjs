@@ -195,7 +195,8 @@ try {
     const request = {
       contactName: created.body.firstName + ' ' + created.body.lastName,
       contactPhone: created.body.phone,
-      contactEmail: created.body.email,
+      contactEmail: created.body.email || 'live-flow@example.test',
+      contactDocumentNumber: created.body.documentNumber || '40999888',
       startsAt: selected.startsAt,
     };
     assert.equal(

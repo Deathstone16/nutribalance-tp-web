@@ -44,7 +44,8 @@ test('login uses the anonymous CSRF, then rotated CSRF; logout handles 204 and c
   await api.requestAppointment({
     contactName: 'Ana Ejemplo',
     contactPhone: '0000000000',
-    contactEmail: null,
+    contactEmail: 'ana@example.test',
+    contactDocumentNumber: '30111222',
     startsAt: '2026-10-27T12:00:00Z',
   });
   assert.equal(calls.filter((call) => call.path.endsWith('/auth/csrf')).length, 2);
@@ -395,4 +396,39 @@ test('Tunnel writes use the configured HTTPS origin despite the internal HTTP li
     403,
   );
   assert.equal(calls, 1);
+});
+
+test('email confirmation posts the token with CSRF and surfaces expired links', async (t) => {
+  const api = await moduleAt('../lib/express-api.ts'),
+    token = 'a'.repeat(43),
+    calls = [];
+  let expired = false;
+  t.mock.method(globalThis, 'fetch', async (path, options) => {
+    calls.push({ path, ...options });
+    if (path.endsWith('/auth/csrf')) return Response.json({ csrfToken: 'visitor-token' });
+    if (expired)
+      return Response.json(
+        { error: { code: 'CONFIRMATION_EXPIRED', message: 'El enlace venció.', details: [] } },
+        { status: 409 },
+      );
+    return Response.json({
+      emailConfirmed: true,
+      alreadyConfirmed: false,
+      startsAt: '2026-10-27T12:00:00Z',
+      endsAt: '2026-10-27T12:30:00Z',
+      status: 'pending',
+    });
+  });
+  const result = await api.confirmEmail(token);
+  assert.equal(result.emailConfirmed, true);
+  const post = calls.find((call) => call.path.endsWith('/appointment-requests/confirm-email'));
+  assert.equal(post.method, 'POST');
+  assert.equal(post.headers['X-CSRF-Token'], 'visitor-token');
+  assert.deepEqual(JSON.parse(post.body), { token });
+  expired = true;
+  await assert.rejects(api.confirmEmail(token), (error) => {
+    assert.equal(error.code, 'CONFIRMATION_EXPIRED');
+    assert.equal(error.status, 409);
+    return true;
+  });
 });

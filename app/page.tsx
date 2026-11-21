@@ -21,8 +21,9 @@ const steps = [
     description: 'Consultá los horarios disponibles y enviá tu solicitud.',
   },
   {
-    title: 'Esperá la confirmación',
-    description: 'Recibís un código de solicitud. El horario queda pendiente de confirmación.',
+    title: 'Confirmá desde tu correo',
+    description:
+      'Te enviamos un correo para confirmar tu solicitud. Después, el consultorio revisa el horario.',
   },
   {
     title: 'Continuá en cada consulta',
@@ -118,8 +119,9 @@ export default function Home() {
                 <h3>¿La solicitud confirma mi turno?</h3>
               </div>
               <p>
-                No. Al enviar el formulario recibís un código de solicitud y el turno queda
-                pendiente. Se revisa el pedido antes de confirmar el turno.
+                No todavía. Al enviar el formulario te mandamos un correo: confirmás tu solicitud
+                desde ahí y el turno queda pendiente. Después se revisa el pedido antes de
+                confirmar el turno.
               </p>
             </article>
             <article id="faq-seguimiento" className="faq-card">
