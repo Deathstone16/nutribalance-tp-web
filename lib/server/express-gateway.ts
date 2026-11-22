@@ -5,11 +5,11 @@ const routes: [RegExp, string[]][] = [
   [/^\/auth\/(csrf|me)$/, ['GET']],
   [/^\/auth\/(login|logout)$/, ['POST']],
   [/^\/availability$/, ['GET']],
-  [/^\/appointment-requests(\/confirm-email)?$/, ['POST']],
+  [/^\/appointment-requests(\/confirm-email|\/resend-confirmation)?$/, ['POST']],
   [/^\/patients$/, ['GET', 'POST']],
   [new RegExp('^/patients/' + UUID + '$'), ['GET', 'PATCH']],
   [new RegExp('^/patients/' + UUID + '/consultations$'), ['GET', 'POST']],
-  [/^\/appointments$/, ['GET']],
+  [/^\/appointments$/, ['GET', 'POST']],
   [new RegExp('^/appointments/' + UUID + '$'), ['GET', 'PATCH']],
 ];
 const error = (status: number, code: string, message: string) =>

@@ -70,11 +70,11 @@ export default function ConfirmEmail() {
         <span className="success-symbol">
           <CheckCircle2 size={31} />
         </span>
-        <h2>
+        <h1>
           Tu correo
           <br />
           está confirmado.
-        </h2>
+        </h1>
         <p>
           Recibimos tu confirmación. El consultorio revisa la solicitud y confirma el turno antes
           del encuentro.
@@ -109,11 +109,11 @@ export default function ConfirmEmail() {
         <span className="success-symbol is-warning">
           <TriangleAlert size={31} />
         </span>
-        <h2>
+        <h1>
           No pudimos
           <br />
           confirmar el turno.
-        </h2>
+        </h1>
         <p>
           {token === null
             ? 'El enlace está incompleto. Abrí el botón del correo o copiá el enlace completo.'
@@ -130,11 +130,11 @@ export default function ConfirmEmail() {
       <span className="success-symbol">
         <MailCheck size={31} />
       </span>
-      <h2>
+      <h1>
         Confirmá
         <br />
         tu turno.
-      </h2>
+      </h1>
       <p>Tocá el botón para confirmar tu correo y dejar registrada tu solicitud de turno.</p>
       <button className="btn" type="button" disabled={busy} onClick={() => void confirm()}>
         {busy ? 'Confirmando…' : 'Confirmar mi turno'}

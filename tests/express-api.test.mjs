@@ -432,3 +432,55 @@ test('email confirmation posts the token with CSRF and surfaces expired links', 
     return true;
   });
 });
+
+test('resending the confirmation posts the request id (and the corrected email) without blocking other actions', async (t) => {
+  const api = await moduleAt('../lib/express-api.ts'),
+    id = '11111111-1111-4111-8111-111111111111',
+    calls = [];
+  let tooSoon = false;
+  t.mock.method(globalThis, 'fetch', async (path, options) => {
+    calls.push({ path, ...options });
+    if (path.endsWith('/auth/csrf')) return Response.json({ csrfToken: 'visitor-token' });
+    if (path.endsWith('/resend-confirmation') && tooSoon)
+      return Response.json(
+        { error: { code: 'RESEND_TOO_SOON', message: 'Esperá 42 segundos.', details: [] } },
+        { status: 429, headers: { 'Retry-After': '42' } },
+      );
+    if (path.endsWith('/resend-confirmation'))
+      return Response.json({ sentTo: 'ana@example.test', emailChanged: false, confirmationExpiresAt: '2026-11-22T21:00:00Z' });
+    return Response.json({ emailConfirmed: true, alreadyConfirmed: false, startsAt: '2026-11-23T12:00:00Z', endsAt: '2026-11-23T12:30:00Z', status: 'pending' });
+  });
+  const sent = await api.resendConfirmation(id);
+  assert.equal(sent.sentTo, 'ana@example.test');
+  const first = calls.find((call) => call.path.endsWith('/resend-confirmation'));
+  assert.deepEqual(JSON.parse(first.body), { id });
+  await api.resendConfirmation(id, 'nuevo@example.test');
+  const second = calls.filter((call) => call.path.endsWith('/resend-confirmation')).at(-1);
+  assert.deepEqual(JSON.parse(second.body), { id, contactEmail: 'nuevo@example.test' });
+  tooSoon = true;
+  await assert.rejects(api.resendConfirmation(id), (error) => {
+    assert.equal(error.code, 'RESEND_TOO_SOON');
+    assert.equal(error.retryAfter, 42);
+    return true;
+  });
+  // La espera de un reenvío no debe bloquear el resto de las acciones.
+  const confirmed = await api.confirmEmail('a'.repeat(43));
+  assert.equal(confirmed.emailConfirmed, true);
+});
+
+test('the professional creates a confirmed appointment for an existing patient', async (t) => {
+  const api = await moduleAt('../lib/express-api.ts'),
+    calls = [];
+  t.mock.method(globalThis, 'fetch', async (path, options) => {
+    calls.push({ path, ...options });
+    if (path.endsWith('/auth/csrf')) return Response.json({ csrfToken: 'anonymous-token' });
+    if (path.endsWith('/auth/login')) return Response.json(session);
+    return Response.json({ id: 'appointment-id', status: 'confirmed' }, { status: 201 });
+  });
+  await api.login('professional@example.test', 'test-password-only');
+  const created = await api.createAppointment('patient-id', '2026-11-24T13:00:00Z');
+  assert.equal(created.status, 'confirmed');
+  const post = calls.find((call) => call.path.endsWith('/appointments') && call.method === 'POST');
+  assert.equal(post.headers['X-CSRF-Token'], 'rotated-token');
+  assert.deepEqual(JSON.parse(post.body), { patientId: 'patient-id', startsAt: '2026-11-24T13:00:00Z' });
+});

@@ -32,6 +32,7 @@ import {
 import * as api from '@/lib/express-api';
 import Avatar from '@/components/ui/PatientAvatar';
 import Badge from '@/components/ui/NutriBadge';
+import NewAppointment from './NewAppointment';
 
 type Screen = 'Resumen' | 'Pacientes' | 'Agenda' | 'Ficha' | 'Configuración';
 type ModalState =
@@ -39,6 +40,7 @@ type ModalState =
   | { kind: 'consultation'; appointment?: api.Appointment }
   | { kind: 'confirm'; appointment: api.Appointment; patient?: api.Patient }
   | { kind: 'cancel'; appointment: api.Appointment }
+  | { kind: 'appointment'; patient?: api.Patient }
   | null;
 type Summary = {
   patients: api.Page<api.Patient>;
@@ -614,14 +616,24 @@ export default function ExpressDashboard() {
             </div>
             <div className="heading-actions">
               {screen === 'Ficha' && patient ? (
-                <button className="btn" onClick={() => openModal({ kind: 'consultation' })}>
-                  <Plus size={17} />
-                  Registrar consulta
-                </button>
+                <>
+                  <button
+                    className="btn secondary"
+                    onClick={() => openModal({ kind: 'appointment', patient })}
+                  >
+                    <CalendarDays size={17} />
+                    Nuevo turno
+                  </button>
+                  <button className="btn" onClick={() => openModal({ kind: 'consultation' })}>
+                    <Plus size={17} />
+                    Registrar consulta
+                  </button>
+                </>
               ) : screen === 'Agenda' ? (
-                <a className="btn" href="/solicitar-turno">
-                  Solicitar un turno <ArrowUpRight size={17} />
-                </a>
+                <button className="btn" onClick={() => openModal({ kind: 'appointment' })}>
+                  <Plus size={17} />
+                  Nuevo turno
+                </button>
               ) : (
                 screen !== 'Configuración' && (
                   <button className="btn" onClick={() => openModal({ kind: 'patient' })}>
@@ -777,7 +789,7 @@ export default function ExpressDashboard() {
               {!loading && !loadError && (
                 <>
                   <div className="table-wrap">
-                    <table>
+                    <table className="patients-table">
                       <thead>
                         <tr>
                           <th scope="col">Paciente</th>
@@ -788,16 +800,32 @@ export default function ExpressDashboard() {
                       </thead>
                       <tbody>
                         {patients.data.map((value) => (
-                          <tr key={value.id}>
-                            <td>
-                              <strong>{api.fullName(value)}</strong>
+                          <tr
+                            key={value.id}
+                            className="patient-row"
+                            onClick={(event) => {
+                              // Toda la fila abre la ficha; los botones internos tienen su propio manejo.
+                              if (!(event.target as HTMLElement).closest('button, a'))
+                                void openPatient(value.id);
+                            }}
+                          >
+                            <td data-label="Paciente">
+                              <button
+                                type="button"
+                                className="patient-name"
+                                onClick={() => void openPatient(value.id)}
+                              >
+                                {api.fullName(value)}
+                              </button>
                             </td>
-                            <td>{value.documentNumber || 'Sin registrar'}</td>
-                            <td>
+                            <td data-label="Documento">
+                              {value.documentNumber ? 'DNI ' + value.documentNumber : 'Sin DNI'}
+                            </td>
+                            <td data-label="Contacto">
                               {value.phone}
                               <small>{value.email}</small>
                             </td>
-                            <td>
+                            <td data-label="Ficha" className="patient-open">
                               <button
                                 className="textbutton"
                                 onClick={() => void openPatient(value.id)}
@@ -1038,7 +1066,9 @@ export default function ExpressDashboard() {
                 ? 'Registrar consulta'
                 : modal.kind === 'confirm'
                   ? 'Confirmar turno'
-                  : 'Cancelar turno'
+                  : modal.kind === 'appointment'
+                    ? 'Nuevo turno'
+                    : 'Cancelar turno'
           }
           busy={saving}
           onClose={() => setModal(null)}
@@ -1226,6 +1256,26 @@ export default function ExpressDashboard() {
                 }, 'Turno confirmado')
               }
               onNewPatient={() => openModal({ kind: 'patient', appointment: modal.appointment })}
+              onCancel={() => setModal(null)}
+            />
+          )}
+          {modal.kind === 'appointment' && (
+            <NewAppointment
+              initialPatient={modal.patient}
+              busy={saving}
+              error={formError}
+              today={today}
+              onCreate={(selected, date, startsAt) =>
+                void save(async () => {
+                  await api.createAppointment(selected.id, startsAt);
+                  // Se muestra el día del turno nuevo para que la profesional lo vea en la agenda.
+                  setFrom(date);
+                  setTo(api.addDays(date, 6));
+                  setStatus('');
+                  setAppointmentPage(1);
+                  navigate('Agenda');
+                }, 'Turno creado y confirmado')
+              }
               onCancel={() => setModal(null)}
             />
           )}

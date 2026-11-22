@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { MailCheck } from 'lucide-react';
+import ResendConfirmation from './ResendConfirmation';
 import {
   availability,
   requestAppointment,
@@ -156,11 +157,8 @@ export default function RequestForm() {
               <span className="badge amber">Esperando tu confirmación por correo</span>
             </dd>
           </div>
-          <div>
-            <dt>Código de solicitud</dt>
-            <dd className="receipt-code">{receipt.id}</dd>
-          </div>
         </dl>
+        <ResendConfirmation requestId={receipt.id} email={sentTo} onEmailChange={setSentTo} />
         <p className="request-success-note">
           ¿No lo ves? Revisá la carpeta de spam. Si no lo confirmás a tiempo, el horario se libera
           y vas a tener que pedir el turno de nuevo.
