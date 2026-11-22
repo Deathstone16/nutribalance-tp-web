@@ -8,7 +8,7 @@ import RequestForm from '@/components/public/RequestForm';
 export const metadata: Metadata = {
   title: 'Solicitar turno | NutriBalance',
   description:
-    'Consultá los horarios disponibles y enviá tu solicitud de turno. El encuentro queda pendiente de confirmación.',
+    'Consultá los horarios disponibles y enviá tu solicitud de turno. Confirmás desde tu correo y el consultorio revisa el pedido.',
   alternates: { canonical: '/solicitar-turno' },
 };
 
@@ -34,17 +34,17 @@ export default function RequestPage() {
             <div className="request-intro-aside">
               <span className="request-script">30 minutos</span>
               <p>
-                Elegí una fecha y un horario disponible. La solicitud queda pendiente hasta que se
-                revise y confirme el turno.
+                Elegí una fecha y un horario disponible. Te enviamos un correo para confirmar la
+                solicitud; después se revisa y se confirma el turno.
               </p>
               <ul>
                 <li>
                   <Check size={17} />
-                  Recibís un código de solicitud.
+                  Te enviamos un correo para confirmar tu solicitud.
                 </li>
                 <li>
                   <Check size={17} />
-                  El turno queda pendiente de confirmación.
+                  Después, el consultorio revisa y confirma el turno.
                 </li>
                 <li>
                   <Check size={17} />

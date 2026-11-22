@@ -20,7 +20,10 @@ export default function SmoothAnchor({
     const mobileMenu = event.currentTarget.closest('details.mobile-nav');
     if (mobileMenu) mobileMenu.removeAttribute('open');
     const scroll = () => {
-      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - 32);
+      // El header de la landing es fijo: se descuenta su altura para no tapar el destino.
+      const header = document.querySelector<HTMLElement>('.editorial-home .public-header');
+      const offset = (header?.offsetHeight ?? 0) + 24;
+      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.scrollTo(0, top);
       } else {

@@ -13,9 +13,18 @@
 }
 
 .editorial-home .public-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  width: 100%;
   padding-inline: 72px;
-  border-bottom: 0;
+  border-bottom: 1px solid #d9dcc6;
   border-radius: 6px 6px 0 0;
+}
+
+/* Con el header fijo, los saltos a #secciones (también desde otras páginas) no quedan tapados. */
+html:has(.editorial-home) {
+  scroll-padding-top: 120px;
 }
 
 .editorial-home .public-main {

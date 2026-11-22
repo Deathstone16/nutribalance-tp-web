@@ -26,6 +26,9 @@ export type Appointment = {
   contactName: string;
   contactPhone: string;
   contactEmail: string | null;
+  contactDocumentNumber: string | null;
+  /** La persona abrió el enlace del correo; hasta entonces la profesional no puede confirmar. */
+  contactEmailConfirmed: boolean;
   startsAt: string;
   endsAt: string;
   status: AppointmentStatus;
@@ -58,10 +61,25 @@ export type Availability = { date: string; timeZone: string; slots: Slot[] };
 export type RequestInput = {
   contactName: string;
   contactPhone: string;
-  contactEmail: string | null;
+  contactEmail: string;
+  contactDocumentNumber: string;
   startsAt: string;
 };
-export type RequestReceipt = { id: string; startsAt: string; endsAt: string; status: 'pending' };
+export type RequestReceipt = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: 'pending';
+  emailConfirmationRequired: boolean;
+  confirmationExpiresAt: string | null;
+};
+export type EmailConfirmation = {
+  emailConfirmed: true;
+  alreadyConfirmed: boolean;
+  startsAt: string;
+  endsAt: string;
+  status: AppointmentStatus;
+};
 
 export class ExpressApiError extends Error {
   constructor(
@@ -97,7 +115,8 @@ async function read<T>(response: Response): Promise<T> {
   }
   if (!response.ok) {
     const code = body?.error?.code || 'REQUEST_FAILED';
-    if (response.status === 429)
+    // La espera entre reenvíos de un mismo correo no debe frenar el resto de las acciones.
+    if (response.status === 429 && code !== 'RESEND_TOO_SOON')
       retryAfterUntil = Date.now() + (Number(response.headers.get('Retry-After')) || 10) * 1000;
     if (code === 'CSRF_INVALID' || response.status === 401) csrfToken = null;
     const messages: Record<string, string> = {
@@ -209,6 +228,19 @@ export const availability = (date: string, signal?: AbortSignal) =>
   get<Availability>('/availability?' + query({ date }), signal);
 export const requestAppointment = (input: RequestInput) =>
   mutate<RequestReceipt>('/appointment-requests', 'POST', input);
+export type ResendResult = { sentTo: string; emailChanged: boolean; confirmationExpiresAt: string };
+/** Reenvía el correo de una solicitud sin confirmar; con `contactEmail` también corrige la dirección. */
+export const resendConfirmation = (requestId: string, contactEmail?: string) =>
+  mutate<ResendResult>(
+    '/appointment-requests/resend-confirmation',
+    'POST',
+    contactEmail ? { id: requestId, contactEmail } : { id: requestId },
+  );
+/** La profesional agenda a un paciente existente: el turno nace confirmado. */
+export const createAppointment = (patientId: string, startsAt: string) =>
+  mutate<Appointment>('/appointments', 'POST', { patientId, startsAt });
+export const confirmEmail = (token: string) =>
+  mutate<EmailConfirmation>('/appointment-requests/confirm-email', 'POST', { token });
 export const listPatients = (q = '', page = 1, signal?: AbortSignal) =>
   get<Page<Patient>>('/patients?' + query({ q, page, pageSize: 20 }), signal);
 export const getPatient = (patientId: string) => get<Patient>('/patients/' + id(patientId));

@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { MailCheck } from 'lucide-react';
+import ResendConfirmation from './ResendConfirmation';
 import {
   availability,
   requestAppointment,
@@ -24,7 +25,8 @@ export default function RequestForm() {
     [refresh, setRefresh] = useState(0);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
-    [receipt, setReceipt] = useState<RequestReceipt | null>(null);
+    [receipt, setReceipt] = useState<RequestReceipt | null>(null),
+    [sentTo, setSentTo] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}),
     [waitUntil, setWaitUntil] = useState(0);
   const submitting = useRef(false),
@@ -97,9 +99,11 @@ export default function RequestForm() {
       const result = await requestAppointment({
         contactName: String(fields.get('contactName')).trim(),
         contactPhone: String(fields.get('contactPhone') || '').trim(),
-        contactEmail: String(fields.get('contactEmail') || '').trim() || null,
+        contactEmail: String(fields.get('contactEmail') || '').trim(),
+        contactDocumentNumber: String(fields.get('contactDocumentNumber') || '').trim(),
         startsAt: selectedSlot,
       });
+      setSentTo(String(fields.get('contactEmail') || '').trim());
       setReceipt(result);
       window.scrollTo({
         top: 0,
@@ -121,19 +125,18 @@ export default function RequestForm() {
     return (
       <section ref={successRef} tabIndex={-1} className="request-success" aria-live="polite">
         <span className="success-symbol">
-          <CheckCircle2 size={31} />
+          <MailCheck size={31} />
         </span>
         <h2>
-          Tu solicitud
+          Falta un paso:
           <br />
-          ya está registrada.
+          confirmá en tu correo.
         </h2>
-        <p>Guardá este comprobante. El turno debe revisarse y confirmarse antes del encuentro.</p>
+        <p>
+          Te enviamos un correo a <strong>{sentTo}</strong>. Abrilo y tocá{' '}
+          <strong>“Confirmar mi turno”</strong> para dejar registrada tu solicitud.
+        </p>
         <dl>
-          <div>
-            <dt>Código de solicitud</dt>
-            <dd className="receipt-code">{receipt.id}</dd>
-          </div>
           <div>
             <dt>Fecha solicitada</dt>
             <dd>{dateText(localDate(new Date(receipt.startsAt)))}</dd>
@@ -142,13 +145,24 @@ export default function RequestForm() {
             <dt>Horario solicitado</dt>
             <dd>{localTime(receipt.startsAt)} · Argentina</dd>
           </div>
+          {receipt.confirmationExpiresAt && (
+            <div>
+              <dt>Confirmalo antes de las</dt>
+              <dd>{localTime(receipt.confirmationExpiresAt)} · Argentina</dd>
+            </div>
+          )}
           <div>
             <dt>Estado</dt>
             <dd>
-              <span className="badge amber">Pendiente de confirmación</span>
+              <span className="badge amber">Esperando tu confirmación por correo</span>
             </dd>
           </div>
         </dl>
+        <ResendConfirmation requestId={receipt.id} email={sentTo} onEmailChange={setSentTo} />
+        <p className="request-success-note">
+          ¿No lo ves? Revisá la carpeta de spam. Si no lo confirmás a tiempo, el horario se libera
+          y vas a tener que pedir el turno de nuevo.
+        </p>
         <Link className="btn" href="/">
           Volver al inicio
         </Link>
@@ -167,7 +181,9 @@ export default function RequestForm() {
             ? field.name === 'startsAt'
               ? 'Elegí un horario disponible.'
               : 'Completá este campo.'
-            : 'Revisá el valor ingresado.',
+            : field.name === 'contactDocumentNumber'
+              ? 'Ingresá un DNI de 7 a 9 números, sin puntos.'
+              : 'Revisá el valor ingresado.',
         }));
       }}
       onInput={(event) => {
@@ -196,6 +212,29 @@ export default function RequestForm() {
         </label>
         <div className="form-grid">
           <label>
+            DNI *
+            <input
+              name="contactDocumentNumber"
+              inputMode="numeric"
+              autoComplete="off"
+              pattern="[0-9]{7,9}"
+              minLength={7}
+              maxLength={9}
+              required
+              placeholder="Sin puntos"
+              aria-describedby={
+                fieldErrors.contactDocumentNumber
+                  ? 'contactDocumentNumber-error contactDocumentNumber-hint'
+                  : 'contactDocumentNumber-hint'
+              }
+              aria-invalid={!!fieldErrors.contactDocumentNumber}
+            />
+            <span className="request-field-hint" id="contactDocumentNumber-hint">
+              Si ya te atendiste, te reconocemos por tu DNI.
+            </span>
+            {fieldError('contactDocumentNumber')}
+          </label>
+          <label>
             Teléfono *
             <input
               name="contactPhone"
@@ -209,21 +248,26 @@ export default function RequestForm() {
             />
             {fieldError('contactPhone')}
           </label>
-          <label>
-            <span className="request-label-line">
-              Correo electrónico <span className="optional-label">Opcional</span>
-            </span>
-            <input
-              name="contactEmail"
-              type="email"
-              autoComplete="off"
-              maxLength={254}
-              placeholder="ana@example.test"
-              {...errorProps('contactEmail')}
-            />
-            {fieldError('contactEmail')}
-          </label>
         </div>
+        <label>
+          Correo electrónico *
+          <input
+            name="contactEmail"
+            type="email"
+            autoComplete="off"
+            maxLength={254}
+            required
+            placeholder="ana@example.test"
+            aria-describedby={
+              fieldErrors.contactEmail ? 'contactEmail-error contactEmail-hint' : 'contactEmail-hint'
+            }
+            aria-invalid={!!fieldErrors.contactEmail}
+          />
+          <span className="request-field-hint" id="contactEmail-hint">
+            Te enviamos un correo para confirmar el turno.
+          </span>
+          {fieldError('contactEmail')}
+        </label>
       </fieldset>
       <fieldset disabled={busy}>
         <legend>Elegí tu próximo encuentro</legend>
@@ -314,7 +358,7 @@ export default function RequestForm() {
           <strong>
             {dateText(chosenDate)} · {localTime(chosenSlot)}
           </strong>
-          <p>Tu solicitud queda pendiente de confirmación.</p>
+          <p>Vas a recibir un correo para confirmar tu solicitud.</p>
         </div>
       )}
       {error && (

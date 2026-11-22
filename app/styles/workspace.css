@@ -325,7 +325,8 @@
   font-size: 13px;
 }
 .app table th {
-  font-size: 11px;
+  color: var(--color-muted);
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.015em;
   text-transform: none;
@@ -447,6 +448,11 @@
 }
 .app .settings-card {
   max-width: 740px;
+}
+/* El contenido principal recibe el foco solo por código (saltar contenido, cierre de cuadros). */
+#panel-contenido:focus {
+  outline: none;
+  box-shadow: none;
 }
 .app .clickable:focus-visible {
   outline: 3px solid var(--color-clay);
@@ -585,6 +591,162 @@
     padding: 21px;
   }
 }
+/* Resumen: una fila de indicadores y dos columnas con lo accionable. */
+.express-workspace .express-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.express-workspace .express-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-paper);
+  color: var(--color-forest);
+  text-align: left;
+  cursor: pointer;
+}
+.express-workspace .express-stat:hover {
+  border-color: var(--color-forest);
+}
+.express-workspace .express-stat strong {
+  display: block;
+  color: var(--color-ink);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.express-workspace .express-stat small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+}
+.express-workspace .express-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.express-workspace .express-summary-side {
+  display: grid;
+  gap: 22px;
+}
+.express-workspace .express-pending {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-line);
+}
+.express-workspace .express-pending strong,
+.express-workspace .express-pending small {
+  display: block;
+}
+.express-workspace .express-pending strong {
+  font-size: 14px;
+}
+.express-workspace .express-pending small {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.express-workspace .express-pending .btn {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: 12px;
+}
+.express-workspace .recent-patient small {
+  margin-top: 2px;
+}
+
+.express-workspace .express-awaiting {
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+/* Solicitudes reconocidas por DNI o correo. */
+.express-workspace .patient-match {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border: 1px solid #c9b48f;
+  border-radius: 4px;
+  background: #faf3e6;
+  color: #6b4a20;
+  font-size: 12px;
+  font-weight: 600;
+}
+.express-workspace .patient-match.known {
+  border-color: #a9c1a6;
+  background: var(--color-sage);
+  color: var(--color-forest);
+}
+
+/* Ficha: datos personales arriba; clínicos al costado del historial. */
+.express-workspace .express-patient-header {
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.express-workspace .express-patient-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, auto));
+  gap: 12px 40px;
+  margin: 0;
+}
+.express-workspace .express-patient-facts dt {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.express-workspace .express-patient-facts dd {
+  margin: 4px 0 0;
+  color: var(--color-ink);
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.express-workspace .express-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+.express-workspace .express-record .express-history {
+  margin-top: 0;
+}
+.express-workspace .express-clinical {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 28px;
+}
+.express-workspace .express-clinical h3 {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+.express-workspace .express-clinical .express-clinical-text {
+  margin-top: 14px;
+}
+.express-workspace .express-dialog-subject {
+  margin: 0 0 12px;
+  color: var(--color-ink);
+}
+
+/* Contraste: textos que no llegaban a 4.5:1. */
+.express-workspace .footer {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.app .notice {
+  border-color: var(--color-line);
+  background: var(--color-sage);
+  color: var(--color-ink);
+  font-size: 13px;
+}
+
 .express-workspace .express-loading {
   padding: 24px 0;
   color: var(--color-muted);
@@ -596,24 +758,36 @@
   margin-top: 8px;
 }
 .express-workspace .express-appointments .appointment-row {
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-.express-workspace .express-appointments .time {
-  min-width: 100px;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 16px;
 }
 .express-workspace .express-appointments .time small {
-  max-width: 135px;
+  display: block;
   white-space: normal;
+}
+.express-workspace .express-appointments .grow strong,
+.express-workspace .express-appointments .grow small {
+  display: block;
+}
+.express-workspace .express-appointments .grow strong {
+  font-size: 15px;
+}
+.express-workspace .express-appointments .grow small {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.express-workspace .express-appointments .badge {
+  margin-left: 0;
 }
 .express-workspace .express-row-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px 16px;
-  flex-basis: 100%;
-  padding-left: 115px;
+  grid-column: 2 / -1;
 }
 .express-workspace .express-row-actions .btn {
   min-height: 38px;
@@ -662,28 +836,69 @@
 .express-workspace .express-history {
   margin-top: 24px;
 }
-.express-workspace .express-visit {
-  padding: 26px 0;
-  border-top: 1px solid var(--color-line);
+/* Historial de consultas: tabla con una fila por consulta y detalle desplegable. */
+.express-workspace .express-history-table {
+  font-size: 14px;
 }
-.express-workspace .express-visit h3 {
+.express-workspace .express-history-table thead th {
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-sage);
+  white-space: nowrap;
+}
+.express-workspace .express-history-table td {
+  padding: 16px;
+  vertical-align: top;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.express-workspace .express-history-table .express-visit-date {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.express-workspace .express-history-table .express-visit-reason {
+  min-width: 200px;
+  max-width: 340px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.express-workspace .express-measurements {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 32px;
-  margin-top: 20px;
+.express-workspace .express-history-table .express-visit-toggle {
+  text-align: right;
+  white-space: nowrap;
 }
-.express-workspace .express-measurements span {
-  color: var(--color-muted);
+.express-workspace .express-history-table .express-visit-toggle .textbutton {
+  min-height: 36px;
   font-size: 13px;
 }
-.express-workspace .express-measurements strong {
-  display: block;
-  color: var(--color-ink);
-  font-size: 21px;
+.express-workspace .express-visit-row.is-open td {
+  border-bottom-color: transparent;
+}
+.express-workspace .express-visit-row.is-open .express-chevron {
+  transform: rotate(180deg);
+}
+.express-workspace .express-visit-detail td {
+  padding: 4px 16px 24px;
+  background: var(--color-paper);
+}
+.express-workspace .express-visit-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 28px;
+  padding: 4px 20px 20px;
+  border-radius: var(--radius-control);
+  background: var(--color-sage);
+}
+/* El texto oculto de la tabla se posiciona dentro del contenedor desplazable y no ensancha la página. */
+.express-workspace .table-wrap {
+  position: relative;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .express-workspace .express-account {
   display: grid;
@@ -737,7 +952,47 @@
 .express-dialog .express-choice small {
   display: block;
 }
+@media (max-width: 1100px) {
+  .express-workspace .express-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .express-workspace .express-clinical,
+  .express-workspace .express-visit-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .express-workspace .express-patient-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 700px) {
+  /* El detalle desplegado queda anclado al ancho visible aunque la tabla se desplace. */
+  .express-workspace .express-visit-detail td {
+    padding-inline: 0;
+  }
+  .express-workspace .express-visit-detail-grid {
+    position: sticky;
+    left: 0;
+    width: calc(100vw - 100px);
+    box-sizing: border-box;
+    padding-inline: 16px;
+  }
+  .express-workspace .express-stats {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .express-workspace .express-stat {
+    padding: 14px 16px;
+  }
+  .express-workspace .express-appointments .appointment-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .express-workspace .express-appointments .badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .express-workspace .express-patient-header {
+    flex-direction: column;
+  }
   .express-workspace .footer {
     flex-direction: column;
     align-items: flex-start;
@@ -768,5 +1023,237 @@
   }
   .express-workspace .express-dialog {
     max-height: calc(100dvh - 24px);
+  }
+}
+
+/* Acceso profesional: mismo lenguaje visual que el panel (tarjeta, tipografía, controles). */
+.panel-login {
+  min-height: 100vh;
+  background: #f4f5ef;
+  color: var(--color-ink);
+}
+.panel-login-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  min-height: 100vh;
+  padding: 48px 20px;
+}
+.panel-login-brand {
+  color: var(--color-forest);
+  font: 400 34px/1.1 var(--font-display);
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+.panel-login-brand span {
+  color: var(--color-clay);
+}
+.panel-login-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 34px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  background: var(--color-paper);
+}
+.panel-login-card h1 {
+  margin: 0;
+  font: 600 30px/1.25 var(--font-body);
+  letter-spacing: -0.035em;
+}
+.panel-login-card > p {
+  margin: 10px 0 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.panel-login-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+}
+.panel-login-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.panel-login-form input {
+  margin: 0;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid #bbc8b9;
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 15px;
+}
+.panel-login-form input:hover {
+  border-color: var(--color-forest);
+}
+.panel-login-form .form-error {
+  margin: 0;
+}
+.panel-login-form .btn {
+  width: 100%;
+  margin-top: 4px;
+}
+.panel-login-checking {
+  margin: 28px 0 0;
+  padding: 18px;
+  border: 1px dashed #bbc8b9;
+  border-radius: var(--radius-control);
+  color: var(--color-muted);
+  font-size: 14px;
+}
+.panel-login-request {
+  margin: 26px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.panel-login-request a {
+  margin-left: 4px;
+  color: var(--color-forest);
+  font-weight: 600;
+  text-underline-offset: 4px;
+}
+@media (max-width: 800px) {
+  .panel-login-main {
+    justify-content: flex-start;
+    padding: 32px 16px 48px;
+  }
+  .panel-login-card {
+    padding: 24px 20px;
+  }
+  .panel-login-card h1 {
+    font-size: 26px;
+  }
+  .panel-login-form input {
+    font-size: 16px;
+  }
+}
+
+/* Nuevo turno (profesional): selector de horarios. */
+.express-dialog .express-slot-field {
+  margin-top: 16px;
+}
+.express-dialog .express-slot-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.express-dialog .express-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+.express-dialog .express-slot {
+  min-height: 44px;
+  border: 1px solid #8fa58d;
+  border-radius: var(--radius-control);
+  background: var(--color-paper);
+  color: var(--color-forest);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.express-dialog .express-slot:hover {
+  background: var(--color-sage);
+}
+.express-dialog .express-slot.selected {
+  border-color: var(--color-forest);
+  background: var(--color-forest);
+  color: #fff;
+}
+.express-dialog .express-slot-hint {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px dashed #8fa58d;
+  border-radius: var(--radius-control);
+  background: var(--color-sage);
+  color: var(--color-ink);
+  font-size: 14px;
+}
+.express-workspace .heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Pacientes: fila clickeable y, en celular, tarjetas en lugar de tabla con scroll. */
+.express-workspace .patients-table .patient-row {
+  cursor: pointer;
+}
+.express-workspace .patients-table .patient-row:hover td {
+  background: var(--color-sage);
+}
+.express-workspace .patients-table .patient-name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: 600 14px/1.4 var(--font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.express-workspace .patients-table .patient-name:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.express-workspace .patients-table .patient-open {
+  white-space: nowrap;
+}
+@media (max-width: 800px) {
+  .express-workspace .patients-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .express-workspace .patients-table,
+  .express-workspace .patients-table tbody {
+    display: block;
+  }
+  .express-workspace .patients-table .patient-row {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-panel);
+    background: var(--color-paper);
+  }
+  .express-workspace .patients-table td {
+    display: block;
+    padding: 0;
+    border: 0;
+    background: transparent !important;
+  }
+  .express-workspace .patients-table .patient-name {
+    font-size: 17px;
+  }
+  .express-workspace .patients-table td[data-label='Documento'] {
+    color: var(--color-muted);
+    font-size: 14px;
+  }
+  .express-workspace .patients-table td[data-label='Contacto'] {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .express-workspace .patients-table .patient-open {
+    margin-top: 6px;
+  }
+  .express-workspace .patients-table .patient-row:hover {
+    border-color: var(--color-forest);
   }
 }

@@ -54,12 +54,12 @@ export default function LoginForm() {
   }
   if (checking)
     return (
-      <p className="professional-checking" role="status">
+      <p className="panel-login-checking" role="status">
         Revisando tu acceso…
       </p>
     );
   return (
-    <form onSubmit={submit} className="professional-login" aria-busy={busy}>
+    <form onSubmit={submit} className="panel-login-form" aria-busy={busy}>
       <label>
         Correo electrónico
         <input name="email" type="email" autoComplete="username" maxLength={254} required />
